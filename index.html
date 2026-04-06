@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CLONEFLIX CLOUD PRO</title>
-    
+    <title>CLONEFLIX - PAINEL CLOUD</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
     <style>
         :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; }
         body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
@@ -18,24 +16,21 @@
         .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
         /* HEADER */
-        header { position: fixed; top: 0; width: 100%; height: 60px; background: #000; display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; }
+        header { position: fixed; top: 0; width: 100%; height: 60px; background: #000; display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid #333; }
         header h1 { color: var(--red); font-size: 1.4rem; margin: 0; }
 
-        /* PLAYER */
+        /* APP */
         #player-area { width: 100%; background: #000; margin-top: 60px; aspect-ratio: 16/9; }
         video { width: 100%; height: 100%; display: block; }
-
-        /* GRID */
         .container { padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
-        .card { background: var(--card); border-radius: 6px; overflow: hidden; cursor: pointer; position: relative; }
+        .card { background: var(--card); border-radius: 6px; overflow: hidden; cursor: pointer; position: relative; text-align: center; padding-bottom: 10px;}
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-name { padding: 8px; font-size: 0.75rem; font-weight: bold; text-align: center; background: rgba(0,0,0,0.8); position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }
 
         /* ADMIN */
         #admin-panel { display: none; padding: 80px 20px; min-height: 100vh; background: #111; }
-        .admin-section { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
-        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #262626; margin-bottom: 5px; border-radius: 4px; }
+        .admin-section { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #333; }
+        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #262626; margin-bottom: 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -67,26 +62,29 @@
 
     <div id="admin-panel">
         <button class="btn-red" id="btn-close-admin" style="width:auto; margin-bottom:20px">← VOLTAR</button>
+        
         <div class="admin-section">
-            <h3>Usuários Online</h3>
+            <h3>Gerenciar Usuários</h3>
             <input type="text" id="adm-u" placeholder="Nome">
             <input type="text" id="adm-p" placeholder="Senha">
-            <button class="btn-red" id="btn-save-user">CRIAR ACESSO</button>
+            <button class="btn-red" id="btn-save-user">CRIAR USUÁRIO</button>
             <div id="lista-usuarios" style="margin-top:15px"></div>
         </div>
+
         <div class="admin-section">
-            <h3>Postar Conteúdo</h3>
+            <h3>Adicionar Filme/TV</h3>
             <input type="text" id="f-nome" placeholder="Nome">
             <input type="text" id="f-cat" placeholder="Categoria">
-            <input type="text" id="f-url" placeholder="URL .m3u8">
-            <input type="text" id="f-capa" placeholder="Link da Capa">
-            <button class="btn-red" id="btn-save-content">POSTAR AGORA</button>
+            <input type="text" id="f-url" placeholder="Link M3U8/URL">
+            <input type="text" id="f-capa" placeholder="Link da Imagem/Capa">
+            <button class="btn-red" id="btn-save-content">SALVAR CONTEÚDO</button>
         </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+        // Configuração baseada nos seus prints
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo",
@@ -107,30 +105,32 @@
             const u = document.getElementById('user-login').value;
             const p = document.getElementById('pass-login').value;
 
+            // Login do Dono (Você)
             if (u === "Rhuan" && p === "2026") {
                 iniciarApp(true);
                 return;
             }
 
-            const snapshot = await get(ref(db, 'usuarios'));
-            let autorizado = false;
-            snapshot.forEach(child => {
-                if(child.val().user === u && child.val().pass === p) autorizado = true;
-            });
-
-            if(autorizado) iniciarApp(false);
-            else alert("Acesso Inválido!");
+            // Busca usuários criados no banco
+            try {
+                const snapshot = await get(ref(db, 'usuarios'));
+                let autorizado = false;
+                snapshot.forEach(child => {
+                    if(child.val().user === u && child.val().pass === p) autorizado = true;
+                });
+                if(autorizado) iniciarApp(false);
+                else alert("Acesso Inválido!");
+            } catch (e) {
+                alert("Erro: Banco de dados não configurado ou Regras bloqueadas!");
+            }
         };
 
         function iniciarApp(isAdmin) {
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             if(isAdmin) document.getElementById('btn-adm-view').style.display = 'block';
-            carregarDados();
-        }
-
-        // CARREGAR DADOS
-        function carregarDados() {
+            
+            // Sincroniza Conteúdo
             onValue(ref(db, 'conteudo'), (snap) => {
                 dadosGlobais = {};
                 snap.forEach(item => {
@@ -149,12 +149,13 @@
             document.getElementById('grid-home').style.display = 'grid';
             document.getElementById('grid-itens').style.display = 'none';
             document.getElementById('btn-back').style.display = 'none';
+            document.getElementById('titulo-dinamico').innerText = "Categorias";
             
             Object.keys(dadosGlobais).forEach(cat => {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.style.padding = '20px';
-                card.innerHTML = `<strong>${cat}</strong>`;
+                card.innerHTML = `<strong>${cat}</strong><br><small>${dadosGlobais[cat].length} itens</small>`;
                 card.onclick = () => renderCat(cat);
                 grid.appendChild(card);
             });
@@ -166,11 +167,12 @@
             document.getElementById('grid-home').style.display = 'none';
             document.getElementById('grid-itens').style.display = 'grid';
             document.getElementById('btn-back').style.display = 'block';
+            document.getElementById('titulo-dinamico').innerText = cat;
 
             dadosGlobais[cat].forEach(f => {
                 const card = document.createElement('div');
                 card.className = 'card';
-                card.innerHTML = `<img src="${f.capa}"><div class="card-name">${f.nome}</div>`;
+                card.innerHTML = `<img src="${f.capa}" onerror="this.src='https://via.placeholder.com/150x220?text=Capa'"><br><strong>${f.nome}</strong>`;
                 card.onclick = () => {
                     const v = document.getElementById('main-video');
                     if(Hls.isSupported()){
@@ -183,48 +185,55 @@
             });
         }
 
-        // ADMIN
-        document.getElementById('btn-adm-view').onclick = () => {
-            document.getElementById('main-app').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'block';
-            listarUsers();
-        };
-
-        document.getElementById('btn-close-admin').onclick = () => {
-            document.getElementById('admin-panel').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
-        };
-
+        // ADMIN FUNCTIONS
         document.getElementById('btn-save-user').onclick = () => {
             const user = document.getElementById('adm-u').value;
             const pass = document.getElementById('adm-p').value;
-            if(user && pass) push(ref(db, 'usuarios'), { user, pass });
+            if(user && pass) {
+                push(ref(db, 'usuarios'), { user, pass }).then(() => {
+                    alert("Usuário criado na nuvem!");
+                    document.getElementById('adm-u').value = "";
+                    document.getElementById('adm-p').value = "";
+                });
+            }
         };
 
         document.getElementById('btn-save-content').onclick = () => {
             const content = {
                 nome: document.getElementById('f-nome').value,
-                categoria: document.getElementById('f-cat').value,
+                categoria: document.getElementById('f-cat').value || "Geral",
                 url: document.getElementById('f-url').value,
                 capa: document.getElementById('f-capa').value
             };
-            if(content.nome && content.url) push(ref(db, 'conteudo'), content);
+            if(content.nome && content.url) {
+                push(ref(db, 'conteudo'), content).then(() => {
+                    alert("Conteúdo publicado!");
+                    document.getElementById('f-nome').value = "";
+                    document.getElementById('f-url').value = "";
+                });
+            }
         };
 
-        function listarUsers() {
+        document.getElementById('btn-adm-view').onclick = () => {
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
             onValue(ref(db, 'usuarios'), snap => {
                 const div = document.getElementById('lista-usuarios');
                 div.innerHTML = "";
                 snap.forEach(u => {
-                    const row = document.createElement('div');
-                    row.className = 'user-item';
-                    row.innerHTML = `<span>${u.val().user}</span><button onclick="window.delU('${u.key}')">Excluir</button>`;
-                    div.appendChild(row);
+                    const item = document.createElement('div');
+                    item.className = 'user-item';
+                    item.innerHTML = `<span>${u.val().user}</span> <button onclick="window.delU('${u.key}')">Remover</button>`;
+                    div.appendChild(item);
                 });
             });
-        }
+        };
 
         window.delU = (key) => remove(ref(db, 'usuarios/' + key));
+        document.getElementById('btn-close-admin').onclick = () => {
+            document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+        };
         document.getElementById('btn-back').onclick = renderHome;
     </script>
 </body>

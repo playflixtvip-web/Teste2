@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CLONEFLIX PRO</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        :root { --bg: #141414; --red: #E50914; --card-bg: #222; --text: #fff; }
+        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        /* TELA DE LOGIN */
+        #login-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 5000; }
+        .login-box { background: rgba(20, 20, 20, 0.9); padding: 40px; border-radius: 8px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 0 20px rgba(229, 9, 20, 0.3); }
+        .login-box h2 { color: var(--red); margin-bottom: 25px; letter-spacing: 2px; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: none; background: #333; color: #fff; box-sizing: border-box; }
+        .login-box button { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        /* INTERFACE DO APP */
+        #main-app, #admin-panel { display: none; }
+        header { position: fixed; top: 0; width: 100%; height: 55px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 20px; z-index: 1000; border-bottom: 1px solid #333; box-sizing: border-box; justify-content: space-between; }
+        header h1 { color: var(--red); font-size: 1.2rem; margin: 0; font-weight: bold; }
+        
+        .nav-btns { display: flex; gap: 10px; }
+        .btn-acao { background: var(--red); color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+
+        #player-area { position: relative; width: 100%; background: #000; margin-top: 55px; aspect-ratio: 16/9; z-index: 900; }
+        video { width: 100%; height: 100%; display: block; object-fit: contain; }
+
+        .container { padding: 20px; }
+        #status-titulo { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #fff; text-transform: uppercase; border-left: 4px solid var(--red); padding-left: 10px; }
+        
+        .grid-categorias { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .btn-categoria { background: #222; padding: 20px; border-radius: 6px; cursor: pointer; font-weight: bold; border-left: 5px solid var(--red); display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
+
+        #grid-conteudo { display: none; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+        .card { background: var(--card-bg); border-radius: 4px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: 0.2s; position: relative; }
+        .card:hover { border-color: var(--red); transform: scale(1.05); }
+        .card-img { width: 100%; height: 150px; background: #333; }
+        .card-img img { width: 100%; height: 100%; object-fit: cover; }
+        .card-nome { padding: 8px; font-size: 0.7rem; font-weight: bold; text-align: center; background: rgba(0,0,0,0.8); position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }
+
+        /* PAINEL ADMIN */
+        .admin-form { background: #222; padding: 20px; border-radius: 8px; max-width: 500px; margin: 80px auto; }
+        .admin-form input, .admin-form select { width: 100%; padding: 10px; margin-bottom: 10px; background: #444; border: none; color: white; border-radius: 4px; }
+
+        @media (orientation: landscape) {
+            #player-area { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; margin-top: 0; z-index: 2000; }
+            header, .container { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-container">
+        <div class="login-box">
+            <h2>CLONEFLIX</h2>
+            <input type="text" id="user" placeholder="Usuário">
+            <input type="password" id="pass" placeholder="Senha">
+            <button onclick="fazerLogin()">ENTRAR</button>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <header>
+            <h1>CLONEFLIX</h1>
+            <div class="nav-btns">
+                <button id="btn-admin" class="btn-acao" style="display:none; background: #555;" onclick="abrirAdmin()">PAINEL</button>
+                <button id="btn-voltar" class="btn-acao" onclick="voltarParaCategorias()" style="display:none;">VOLTAR</button>
+            </div>
+        </header>
+        <div id="player-area"><video id="video" controls autoplay playsinline></video></div>
+        <div class="container">
+            <div id="status-titulo">Categorias</div>
+            <div id="grid-categorias" class="grid-categorias"></div>
+            <div id="grid-conteudo"></div>
+        </div>
+    </div>
+
+    <div id="admin-panel">
+        <header>
+            <h1>PAINEL ADMIN</h1>
+            <button class="btn-acao" onclick="fecharAdmin()">FECHAR</button>
+        </header>
+        <div class="container">
+            <div class="admin-form">
+                <h3>Adicionar Novo Conteúdo</h3>
+                <input type="text" id="adm-nome" placeholder="Nome do Filme/Canal">
+                <input type="text" id="adm-cat" placeholder="Categoria (Ex: FILMES, AÇÃO)">
+                <input type="text" id="adm-url" placeholder="URL do Conteúdo (.m3u8 / .txt)">
+                <input type="text" id="adm-capa" placeholder="URL da Capa (Imagem)">
+                <button class="btn-acao" style="width:100%" onclick="salvarNovoFilme()">SALVAR CONTEÚDO</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let dadosAgrupados = {};
+    let videoAtualUrl = "";
+
+    // --- USUÁRIOS ---
+    const usuariosCadastrados = [
+        { usuario: "Rhuan", senha: "321", admin: true },
+        { usuario: "Admin", senha: "456" },
+        { usuario: "Teste", senha: "000" } 
+    ];
+
+    // --- CARREGAR M3U INICIAL + SALVOS ---
+    let listaM3U = `
+#EXTM3U
+#EXTINF:-1 tvg-logo="https://conteudo.imguol.com.br/c/entretenimento/0d/2020/03/07/logomarca-tv-globo-1583609534618_v2_450x450.jpg" group-title="CANAIS ABERTOS", GLOBO
+https://d1muf25xa04so8hp06.s27-usa-cloudfront-net.online/token/2f433d41e9ea2869b5d46f7155ac727e/globosp.txt
+
+#EXTINF:-1 tvg-logo="https://upload.wikimedia.org/wikipedia/pt/thumb/f/f5/Chicken_Run_Dawn_of_the_Nugget_-_poster.jpg/250px-Chicken_Run_Dawn_of_the_Nugget_-_poster.jpg" group-title="FILMES", A FUGA DAS GALINHAS: A AMEAÇA DOS NUGGET
+https://watch.brstream.cc/m3u8/26/1297bcaf6f829c2afe9cae03f1975683/master.txt?s=1&id=31239&cache=1
+    `;
+
+    function fazerLogin() {
+        const uInput = document.getElementById('user').value;
+        const sInput = document.getElementById('pass').value;
+        const usuarioValido = usuariosCadastrados.find(u => u.usuario === uInput && u.senha === sInput);
+
+        if (usuarioValido) {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            if(usuarioValido.admin) document.getElementById('btn-admin').style.display = 'block';
+            
+            inicializarApp();
+        } else {
+            alert("Usuário ou senha incorretos!");
+        }
+    }
+
+    function inicializarApp() {
+        parsearM3U();
+        // Carrega itens adicionados manualmente pelo admin
+        const extras = JSON.parse(localStorage.getItem('filmesExtras') || "[]");
+        extras.forEach(item => {
+            if (!dadosAgrupados[item.categoria]) dadosAgrupados[item.categoria] = [];
+            dadosAgrupados[item.categoria].push(item);
+        });
+        mostrarCategorias();
+    }
+
+    function parsearM3U() {
+        const linhas = listaM3U.split('\n');
+        dadosAgrupados = {};
+        for (let i = 0; i < linhas.length; i++) {
+            if (linhas[i].startsWith('#EXTINF')) {
+                const info = linhas[i];
+                const url = linhas[i + 1] ? linhas[i + 1].trim() : "";
+                if (url && url.startsWith('http')) {
+                    let categoria = (info.match(/group-title="([^"]+)"/i)?.[1] || "OUTROS").toUpperCase();
+                    const nome = info.split(',').pop().trim();
+                    const logo = info.match(/tvg-logo="([^"]+)"/i)?.[1] || 'https://via.placeholder.com/150x220?text=Sem+Capa';
+                    if (!dadosAgrupados[categoria]) dadosAgrupados[categoria] = [];
+                    dadosAgrupados[categoria].push({ nome, logo, url, categoria });
+                }
+            }
+        }
+    }
+
+    // --- SISTEMA DE "CONTINUAR ASSISTINDO" ---
+    function playVideo(url, nome) {
+        const video = document.getElementById('video');
+        videoAtualUrl = url;
+        const tempoSalvo = localStorage.getItem(`progresso_${nome}`);
+
+        if (tempoSalvo && tempoSalvo > 10) {
+            const continuar = confirm(`Deseja continuar assistindo "${nome}" de onde parou?`);
+            carregarStream(url, continuar ? parseFloat(tempoSalvo) : 0);
+        } else {
+            carregarStream(url, 0);
+        }
+
+        // Salvar progresso a cada 5 segundos
+        video.ontimeupdate = () => {
+            if (video.currentTime > 5) {
+                localStorage.setItem(`progresso_${nome}`, video.currentTime);
+            }
+        };
+    }
+
+    function carregarStream(url, tempo) {
+        const video = document.getElementById('video');
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.currentTime = tempo;
+                video.play();
+            });
+        } else {
+            video.src = url;
+            video.onloadedmetadata = () => {
+                video.currentTime = tempo;
+                video.play();
+            };
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- FUNÇÕES ADMIN ---
+    function abrirAdmin() {
+        document.getElementById('main-app').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'block';
+    }
+
+    function fecharAdmin() {
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        inicializarApp();
+    }
+
+    function salvarNovoFilme() {
+        const nome = document.getElementById('adm-nome').value;
+        const categoria = document.getElementById('adm-cat').value.toUpperCase();
+        const url = document.getElementById('adm-url').value;
+        const logo = document.getElementById('adm-capa').value;
+
+        if(!nome || !url) return alert("Preencha ao menos Nome e URL!");
+
+        const extras = JSON.parse(localStorage.getItem('filmesExtras') || "[]");
+        extras.push({ nome, categoria, url, logo });
+        localStorage.setItem('filmesExtras', JSON.stringify(extras));
+        
+        alert("Conteúdo adicionado com sucesso!");
+        fecharAdmin();
+    }
+
+    // --- NAVEGAÇÃO ---
+    function mostrarCategorias() {
+        const gridCat = document.getElementById('grid-categorias');
+        const gridCont = document.getElementById('grid-conteudo');
+        gridCat.style.display = 'grid';
+        gridCont.style.display = 'none';
+        document.getElementById('btn-voltar').style.display = 'none';
+        document.getElementById('status-titulo').innerText = "Categorias";
+        gridCat.innerHTML = '';
+        Object.keys(dadosAgrupados).sort().forEach(cat => {
+            const div = document.createElement('div');
+            div.className = 'btn-categoria';
+            div.innerHTML = `<span>${cat}</span> <small>${dadosAgrupados[cat].length}</small>`;
+            div.onclick = () => abrirCategoria(cat);
+            gridCat.appendChild(div);
+        });
+    }
+
+    function abrirCategoria(cat) {
+        document.getElementById('grid-categorias').style.display = 'none';
+        document.getElementById('grid-conteudo').style.display = 'grid';
+        document.getElementById('btn-voltar').style.display = 'block';
+        document.getElementById('status-titulo').innerText = cat;
+        const gridCont = document.getElementById('grid-conteudo');
+        gridCont.innerHTML = '';
+        dadosAgrupados[cat].forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => playVideo(item.url, item.nome);
+            card.innerHTML = `<div class="card-img"><img src="${item.logo}" onerror="this.src='https://via.placeholder.com/150x220?text=Sem+Capa'"></div><div class="card-nome">${item.nome}</div>`;
+            gridCont.appendChild(card);
+        });
+    }
+
+    function voltarParaCategorias() { mostrarCategorias(); }
+</script>
+</body>
+</html>

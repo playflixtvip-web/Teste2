@@ -1,113 +1,267 @@
-<div id="admin-panel">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2>Painel de Controle</h2>
-            <button class="btn-red" id="btn-close-admin" style="width:auto;">VOLTAR AO APP</button>
-        </div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CLONEFLIX PRO - PAINEL TOTAL</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; --green: #28a745; --gold: #ffc107; }
+        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        /* LOGIN */
+        #login-container { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .login-box { background: rgba(0,0,0,0.9); padding: 40px; border-radius: 8px; width: 90%; max-width: 380px; text-align: center; border: 1px solid #333; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: none; background: #333; color: #fff; box-sizing: border-box; }
+        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
+        /* APP PRINCIPAL */
+        header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.8); display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; }
+        #main-content { display: none; padding-top: 0; }
+        #player-area { width: 100%; background: #000; aspect-ratio: 16/9; }
+        video { width: 100%; height: 100%; }
+
+        /* CATEGORIAS ESTILO NETFLIX */
+        .row { padding: 20px 4%; }
+        .row-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #e5e5e5; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .card { background: var(--card); border-radius: 4px; overflow: hidden; cursor: pointer; transition: 0.3s; }
+        .card:hover { transform: scale(1.05); }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+        .card-info { padding: 8px; font-size: 12px; text-align: center; }
+
+        /* PAINEL ADM */
+        #admin-panel { display: none; padding: 80px 5%; background: #111; min-height: 100vh; }
+        .admin-box { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
+        .btn-sm { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; color: white; font-size: 11px; margin-right: 5px; }
+        .status-ativo { color: var(--green); }
+        .status-suspenso { color: var(--gold); }
+    </style>
+</head>
+<body>
+
+    <div id="login-container">
+        <div class="login-box">
+            <h1 style="color:var(--red)">CLONEFLIX</h1>
+            <input type="text" id="user-login" placeholder="Usuário">
+            <input type="password" id="pass-login" placeholder="Senha">
+            <button class="btn-red" id="btn-entrar">ENTRAR</button>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <header>
+            <h1 style="color:var(--red); font-size: 22px;">CLONEFLIX</h1>
+            <button id="btn-adm-view" class="btn-red" style="display:none; width:auto; padding: 5px 15px; background:#444">PAINEL ADM</button>
+        </header>
+        <div id="player-area"><video id="main-video" controls autoplay playsinline></video></div>
+        <div id="categorias-container"></div>
+    </div>
+
+    <div id="admin-panel">
+        <button class="btn-red" id="btn-close-admin" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
+        
         <div class="admin-box">
-            <h3 id="form-title">Adicionar/Editar Conteúdo</h3>
-            <input type="hidden" id="f-key"> <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="text" id="f-nome" placeholder="Título">
-                <input type="text" id="f-cat" placeholder="Categoria (Ex: AÇÃO, TV)">
-                <input type="text" id="f-url" placeholder="Link .m3u8">
-                <input type="text" id="f-capa" placeholder="URL da Capa">
+            <h3>Gerenciar Acessos (Clientes)</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="adm-u" placeholder="Nome" style="margin:0">
+                <input type="text" id="adm-p" placeholder="Senha" style="margin:0">
+                <button class="btn-red" id="btn-save-user" style="margin:0; width:150px">CRIAR</button>
             </div>
-            <button class="btn-red" id="btn-save-content">SALVAR ALTERAÇÕES / PUBLICAR</button>
-            <button class="btn-red" id="btn-cancel-edit" style="display:none; background:#555;">CANCELAR EDIÇÃO</button>
-        </div>
-
-        <div class="admin-box">
-            <h3>Meus Conteúdos (Filmes e Canais)</h3>
-            <table style="width:100%; text-align:left; border-collapse: collapse;">
-                <thead>
-                    <tr style="border-bottom: 1px solid #444;">
-                        <th>Título</th>
-                        <th>Categoria</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-conteudo"></tbody>
+            <table>
+                <thead><tr><th>Usuário</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody id="lista-usuarios-corpo"></tbody>
             </table>
         </div>
 
         <div class="admin-box">
-            <h3>Gerenciar Acessos</h3>
+            <h3 id="titulo-form-filme">Postar Novo Filme/Canal</h3>
+            <input type="hidden" id="edit-key">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="text" id="f-nome" placeholder="Título">
+                <input type="text" id="f-cat" placeholder="Categoria (Ex: FILMES, TV)">
+                <input type="text" id="f-url" placeholder="Link .m3u8">
+                <input type="text" id="f-capa" placeholder="Link da Capa">
             </div>
+            <button class="btn-red" id="btn-save-content">PUBLICAR / SALVAR EDIÇÃO</button>
+            <button id="btn-cancela-edit" class="btn-red" style="display:none; background:#555; margin-top:5px">CANCELAR EDIÇÃO</button>
+        </div>
+
+        <div class="admin-box">
+            <h3>Lista de Conteúdos (Editar/Excluir)</h3>
+            <table>
+                <thead><tr><th>Título</th><th>Categoria</th><th>Ações</th></tr></thead>
+                <tbody id="lista-conteudo-corpo"></tbody>
+            </table>
+        </div>
     </div>
 
     <script type="module">
-        // ... importações e config do firebase (mantenha as suas chaves das fotos)
-        
-        // --- FUNÇÃO PARA SALVAR OU ATUALIZAR CONTEÚDO ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo",
+            authDomain: "cloneflix-16f9c.firebaseapp.com",
+            projectId: "cloneflix-16f9c",
+            storageBucket: "cloneflix-16f9c.firebasestorage.app",
+            messagingSenderId: "424547428500",
+            appId: "1:424547428500:web:df36775fea37db3d42ac81",
+            databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // LOGIN
+        document.getElementById('btn-entrar').onclick = async () => {
+            const u = document.getElementById('user-login').value;
+            const p = document.getElementById('pass-login').value;
+
+            if (u === "Rhuan" && p === "2026") { entrarApp(true); return; }
+
+            const snap = await get(ref(db, 'usuarios'));
+            let autorizado = false;
+            snap.forEach(c => {
+                const d = c.val();
+                if(d.user === u && d.pass === p) {
+                    if(d.status === "suspenso") { alert("Conta suspensa!"); return; }
+                    autorizado = true;
+                }
+            });
+            if(autorizado) entrarApp(false);
+            else alert("Usuário ou senha incorretos!");
+        };
+
+        function entrarApp(isAdmin) {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            if(isAdmin) {
+                document.getElementById('btn-adm-view').style.display = 'block';
+                monitorarUsuarios();
+                monitorarConteudo();
+            }
+            carregarFilmesApp();
+        }
+
+        // CARREGAR FILMES NO APP (CLIENTE)
+        function carregarFilmesApp() {
+            onValue(ref(db, 'conteudo'), (snap) => {
+                const container = document.getElementById('categorias-container');
+                container.innerHTML = "";
+                let cats = {};
+                snap.forEach(item => {
+                    const f = item.val();
+                    const c = (f.categoria || "GERAL").toUpperCase();
+                    if(!cats[c]) cats[c] = [];
+                    cats[c].push(f);
+                });
+
+                Object.keys(cats).forEach(titulo => {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    row.innerHTML = `<div class="row-title">${titulo}</div><div class="grid" id="g-${titulo}"></div>`;
+                    container.appendChild(row);
+                    cats[titulo].forEach(filme => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `<img src="${filme.capa}"><div class="card-info">${filme.nome}</div>`;
+                        card.onclick = () => {
+                            const v = document.getElementById('main-video');
+                            if(Hls.isSupported()){
+                                const hls = new Hls(); hls.loadSource(filme.url); hls.attachMedia(v);
+                                hls.on(Hls.Events.MANIFEST_PARSED, () => v.play());
+                            }
+                            window.scrollTo(0,0);
+                        };
+                        document.getElementById(`g-${titulo}`).appendChild(card);
+                    });
+                });
+            });
+        }
+
+        // --- FUNÇÕES ADMIN (USUÁRIOS) ---
+        function monitorarUsuarios() {
+            onValue(ref(db, 'usuarios'), (snap) => {
+                const lista = document.getElementById('lista-usuarios-corpo');
+                lista.innerHTML = "";
+                snap.forEach(child => {
+                    const k = child.key; const v = child.val();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${v.user}</td><td class="status-${v.status}">${v.status}</td>
+                        <td><button class="btn-sm" style="background:#007bff" id="st-${k}">Status</button>
+                        <button class="btn-sm" style="background:red" id="delu-${k}">X</button></td>`;
+                    lista.appendChild(tr);
+                    document.getElementById(`st-${k}`).onclick = () => update(ref(db, `usuarios/${k}`), {status: v.status === 'ativo'?'suspenso':'ativo'});
+                    document.getElementById(`delu-${k}`).onclick = () => confirm("Excluir?") && remove(ref(db, `usuarios/${k}`));
+                });
+            });
+        }
+        document.getElementById('btn-save-user').onclick = () => {
+            const user = document.getElementById('adm-u').value;
+            const pass = document.getElementById('adm-p').value;
+            if(user && pass) push(ref(db, 'usuarios'), {user, pass, status: 'ativo'}).then(()=>alert("Criado!"));
+        };
+
+        // --- FUNÇÕES ADMIN (CONTEÚDO / EDIÇÃO) ---
+        function monitorarConteudo() {
+            onValue(ref(db, 'conteudo'), (snap) => {
+                const lista = document.getElementById('lista-conteudo-corpo');
+                lista.innerHTML = "";
+                snap.forEach(child => {
+                    const k = child.key; const v = child.val();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${v.nome}</td><td>${v.categoria}</td>
+                        <td><button class="btn-sm" style="background:#007bff" id="ed-${k}">Editar</button>
+                        <button class="btn-sm" style="background:red" id="delc-${k}">X</button></td>`;
+                    lista.appendChild(tr);
+                    document.getElementById(`ed-${k}`).onclick = () => carregarEdicao(k, v);
+                    document.getElementById(`delc-${k}`).onclick = () => confirm("Excluir?") && remove(ref(db, `conteudo/${k}`));
+                });
+            });
+        }
+
+        function carregarEdicao(key, data) {
+            document.getElementById('edit-key').value = key;
+            document.getElementById('f-nome').value = data.nome;
+            document.getElementById('f-cat').value = data.categoria;
+            document.getElementById('f-url').value = data.url;
+            document.getElementById('f-capa').value = data.capa;
+            document.getElementById('titulo-form-filme').innerText = "Editando: " + data.nome;
+            document.getElementById('btn-cancela-edit').style.display = "block";
+            window.scrollTo(0,0);
+        }
+
         document.getElementById('btn-save-content').onclick = () => {
-            const key = document.getElementById('f-key').value;
-            const filme = {
+            const key = document.getElementById('edit-key').value;
+            const dados = {
                 nome: document.getElementById('f-nome').value,
                 categoria: document.getElementById('f-cat').value,
                 url: document.getElementById('f-url').value,
                 capa: document.getElementById('f-capa').value
             };
-
-            if (key) {
-                // Se tem key, estamos EDITANDO
-                update(ref(db, `conteudo/${key}`), filme).then(() => {
-                    alert("Atualizado com sucesso!");
-                    limparFormFilme();
-                });
+            if(key) {
+                update(ref(db, `conteudo/${key}`), dados).then(() => { alert("Atualizado!"); limparForm(); });
             } else {
-                // Se não tem key, estamos CRIANDO NOVO
-                push(ref(db, 'conteudo'), filme).then(() => {
-                    alert("Postado com sucesso!");
-                    limparFormFilme();
-                });
+                push(ref(db, 'conteudo'), dados).then(() => { alert("Postado!"); limparForm(); });
             }
         };
 
-        // --- LISTAR CONTEÚDOS NO PAINEL ---
-        onValue(ref(db, 'conteudo'), (snap) => {
-            const tbody = document.getElementById('tabela-conteudo');
-            tbody.innerHTML = "";
-            snap.forEach(item => {
-                const f = item.val();
-                const k = item.key;
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${f.nome}</td>
-                    <td>${f.categoria}</td>
-                    <td>
-                        <button class="btn-sm" onclick="window.prepararEdicao('${k}', '${f.nome}', '${f.categoria}', '${f.url}', '${f.capa}')" style="background:#007bff">Editar</button>
-                        <button class="btn-sm" onclick="window.delFilme('${k}')" style="background:red">X</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        });
-
-        // --- PREPARAR FORMULÁRIO PARA EDIÇÃO ---
-        window.prepararEdicao = (key, nome, cat, url, capa) => {
-            document.getElementById('f-key').value = key;
-            document.getElementById('f-nome').value = nome;
-            document.getElementById('f-cat').value = cat;
-            document.getElementById('f-url').value = url;
-            document.getElementById('f-capa').value = capa;
-            
-            document.getElementById('form-title').innerText = "Editando: " + nome;
-            document.getElementById('btn-cancel-edit').style.display = "block";
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        };
-
-        function limparFormFilme() {
-            document.getElementById('f-key').value = "";
+        function limparForm() {
+            document.getElementById('edit-key').value = "";
             document.getElementById('f-nome').value = "";
             document.getElementById('f-cat').value = "";
             document.getElementById('f-url').value = "";
             document.getElementById('f-capa').value = "";
-            document.getElementById('form-title').innerText = "Adicionar/Editar Conteúdo";
-            document.getElementById('btn-cancel-edit').style.display = "none";
+            document.getElementById('titulo-form-filme').innerText = "Postar Novo Filme/Canal";
+            document.getElementById('btn-cancela-edit').style.display = "none";
         }
 
-        window.delFilme = (k) => confirm("Excluir este conteúdo?") && remove(ref(db, `conteudo/${k}`));
-        document.getElementById('btn-cancel-edit').onclick = limparFormFilme;
-
-        // ... restante das funções de usuário e login ...
+        document.getElementById('btn-cancela-edit').onclick = limparForm;
+        document.getElementById('btn-adm-view').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
+        document.getElementById('btn-close-admin').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
     </script>
+</body>
+</html>

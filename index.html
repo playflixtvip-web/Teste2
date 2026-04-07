@@ -53,7 +53,7 @@
         </header>
         <div id="player-area"><video id="main-video" controls playsinline></video></div>
         <div id="user-info" style="padding:15px; font-size:12px; color:#aaa; background:#111;">
-            <b>VALIDADE:</b> <span id="txt-validade" style="color:var(--red)">---</span>
+            <b>SEU ACESSO:</b> <span id="txt-validade" style="color:var(--red)">---</span>
         </div>
         <div id="lista-categorias"></div>
         <div id="detalhe-categoria">
@@ -73,16 +73,10 @@
             <h3>Adicionar Filme ou Canal</h3>
             <input type="hidden" id="edit-cont-id">
             <input id="c-n" placeholder="Nome do Conteúdo">
-            <input id="c-c" placeholder="Categoria (Ex: FILMES, CANAIS, SERIES)">
+            <input id="c-c" placeholder="Categoria (Ex: FILMES, CANAIS)">
             <input id="c-u" placeholder="URL do Conteúdo (.m3u8)">
             <input id="c-p" placeholder="URL da Imagem (Capa)">
             <button class="btn-red" id="btn-salvar-manual" style="width:100%">PUBLICAR PARA TODOS</button>
-        </div>
-
-        <div class="admin-box">
-            <h3>Importar Lista (M3U)</h3>
-            <textarea id="m3u-i" rows="3" placeholder="Cole aqui seu texto #EXTINF..."></textarea>
-            <button class="btn-red" style="background:#28a745; width:100%" id="btn-imp">IMPORTAR TUDO AGORA</button>
         </div>
 
         <div class="admin-box">
@@ -103,7 +97,7 @@
         </div>
 
         <div class="admin-box">
-            <h3>Meus Conteúdos</h3>
+            <h3>Conteúdos no Banco</h3>
             <div class="tabela-container">
                 <table>
                     <thead><tr><th>NOME</th><th>GRUPO</th><th>AÇÕES</th></tr></thead>
@@ -125,16 +119,32 @@
         const playerArea = document.getElementById('player-area');
         let currentId = "";
 
-        // LOGIN
+        // LOGIN COM TRAVA DE EXPIRAÇÃO E STATUS
         document.getElementById('b-e').onclick = async () => {
             const user = document.getElementById('u-l').value;
             const pass = document.getElementById('p-l').value;
-            if(user === "Rhuan" && pass === "2026") return logado(true, "ADMIN");
+            
+            if(user === "Rhuan" && pass === "2026") return logado(true, "ADMINISTRADOR");
+
             const snap = await get(ref(db, 'usuarios'));
             let v = null;
             snap.forEach(i => { if(i.val().user === user && i.val().pass === pass) v = i.val(); });
-            if(v) logado(false, v.expira === "Vitalício" ? "VITALÍCIO" : "ATIVO");
-            else alert("Dados incorretos!");
+
+            if(v) {
+                // Verificar Status
+                if(v.status === 'suspenso') return alert("Seu acesso foi SUSPENSO! Fale com o suporte.");
+                
+                // Verificar Validade
+                const agora = new Date().getTime();
+                if(v.expira !== "Vitalício" && agora > v.expira) {
+                    return alert("Seu acesso EXPIROU! Você precisa renovar para continuar assistindo.");
+                }
+
+                let tempoRestante = v.expira === "Vitalício" ? "VITALÍCIO" : Math.ceil((v.expira - agora)/(1000*60*60*24)) + " DIAS RESTANTES";
+                logado(false, tempoRestante);
+            } else {
+                alert("Usuário ou Senha incorretos!");
+            }
         };
 
         function logado(adm, val) {
@@ -164,7 +174,9 @@
                 s.forEach(i => {
                     const k = i.key; const v = i.val();
                     let resto = v.expira === "Vitalício" ? "VIT" : Math.ceil((v.expira - new Date().getTime())/(1000*60*60*24))+"d";
+                    let corStatus = v.status === 'ativo' ? '#28a745' : '#555';
                     tabU.innerHTML += `<tr><td>${v.user}</td><td>${resto}</td><td>
+                        <button class="btn-mini" style="background:${corStatus}" onclick="window.stU('${k}','${v.status}')">ST</button>
                         <button class="btn-mini" style="background:#007bff" onclick="window.editU('${k}')">ED</button>
                         <button class="btn-mini" style="background:red" onclick="window.delU('${k}')">X</button></td></tr>`;
                 });
@@ -207,44 +219,16 @@
             document.getElementById('lista-categorias').style.display='block';
         };
 
-        // SALVAR MANUAL OU EDITAR
+        // SALVAR MANUAL / EDITAR CONTEÚDO
         document.getElementById('btn-salvar-manual').onclick = () => {
             const id = document.getElementById('edit-cont-id').value;
-            const obj = { 
-                nome: document.getElementById('c-n').value, 
-                categoria: document.getElementById('c-c').value.toUpperCase(), 
-                url: document.getElementById('c-u').value, 
-                capa: document.getElementById('c-p').value 
-            };
-            if(id) update(ref(db, `conteudo/${id}`), obj).then(() => { document.getElementById('edit-cont-id').value=""; alert("Conteúdo Atualizado!"); });
-            else push(ref(db, 'conteudo'), obj).then(() => alert("Conteúdo Publicado!"));
+            const obj = { nome: document.getElementById('c-n').value, categoria: document.getElementById('c-c').value.toUpperCase(), url: document.getElementById('c-u').value, capa: document.getElementById('c-p').value };
+            if(id) update(ref(db, `conteudo/${id}`), obj).then(() => { document.getElementById('edit-cont-id').value=""; alert("Editado!"); });
+            else push(ref(db, 'conteudo'), obj).then(() => alert("Publicado!"));
             document.getElementById('c-n').value=""; document.getElementById('c-c').value=""; document.getElementById('c-u').value=""; document.getElementById('c-p').value="";
         };
 
-        window.editC = async (k) => {
-            const d = (await get(ref(db, `conteudo/${k}`))).val();
-            document.getElementById('edit-cont-id').value = k;
-            document.getElementById('c-n').value = d.nome;
-            document.getElementById('c-c').value = d.categoria;
-            document.getElementById('c-u').value = d.url;
-            document.getElementById('c-p').value = d.capa;
-            window.scrollTo(0, 100);
-        };
-
-        document.getElementById('btn-imp').onclick = async () => {
-            const linhas = document.getElementById('m3u-i').value.split('\n');
-            for(let i=0; i<linhas.length; i++){
-                if(linhas[i].includes('#EXTINF')){
-                    const url = linhas[i+1]?.trim();
-                    const n = linhas[i].split(',')[1] || "S/N";
-                    const c = (linhas[i].match(/group-title="([^"]+)"/) || [null,"GERAL"])[1];
-                    const p = (linhas[i].match(/tvg-logo="([^"]+)"/) || [null,""])[1];
-                    if(url) await push(ref(db, 'conteudo'), { nome: n.trim(), categoria: c.toUpperCase(), url, capa: p });
-                }
-            }
-            alert("Lista Importada!"); document.getElementById('m3u-i').value="";
-        };
-
+        // SALVAR USUÁRIO
         document.getElementById('b-c-u').onclick = () => {
             const id = document.getElementById('edit-user-id').value;
             const dias = document.getElementById('a-d').value;
@@ -252,14 +236,24 @@
             const obj = { user: document.getElementById('a-u').value, pass: document.getElementById('a-p').value, expira: exp, status: 'ativo' };
             if(id) update(ref(db, `usuarios/${id}`), obj).then(() => { document.getElementById('edit-user-id').value=""; alert("Salvo!"); });
             else push(ref(db, 'usuarios'), obj).then(() => alert("Criado!"));
+            document.getElementById('a-u').value=""; document.getElementById('a-p').value=""; document.getElementById('a-d').value="";
+        };
+
+        window.editC = async (k) => {
+            const d = (await get(ref(db, `conteudo/${k}`))).val();
+            document.getElementById('edit-cont-id').value = k;
+            document.getElementById('c-n').value = d.nome; document.getElementById('c-c').value = d.categoria; document.getElementById('c-u').value = d.url; document.getElementById('c-p').value = d.capa;
+            window.scrollTo(0, 100);
         };
 
         window.editU = async (k) => { 
             const d = (await get(ref(db, `usuarios/${k}`))).val();
             document.getElementById('edit-user-id').value=k; document.getElementById('a-u').value=d.user; document.getElementById('a-p').value=d.pass;
         };
-        window.delU = (k) => confirm("Deletar?") && remove(ref(db, `usuarios/${k}`));
-        window.delC = (k) => confirm("Deletar?") && remove(ref(db, `conteudo/${k}`));
+
+        window.stU = (k, s) => update(ref(db, `usuarios/${k}`), { status: s === 'ativo' ? 'suspenso' : 'ativo' });
+        window.delU = (k) => confirm("Deletar Usuário?") && remove(ref(db, `usuarios/${k}`));
+        window.delC = (k) => confirm("Deletar Conteúdo?") && remove(ref(db, `conteudo/${k}`));
 
         document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
         document.getElementById('b-v-adm').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };

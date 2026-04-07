@@ -3,53 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CLONEFLIX VIP - PAINEL ADM</title>
+    <title>CLONEFLIX VIP</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; --gray: #333; }
-        body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; }
         
         /* LOGIN */
         #login-container { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-box { background: rgba(0,0,0,0.9); padding: 30px; border-radius: 8px; width: 85%; max-width: 350px; text-align: center; border: 1px solid var(--gray); }
-        
-        /* CABEÇALHO */
-        header { position: fixed; top: 0; width: 100%; height: 60px; background: #000; display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid var(--gray); }
-        
-        /* PADRÃO DE BOTÕES E INPUTS */
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: none; background: var(--gray); color: #fff; box-sizing: border-box; font-size: 16px; }
-        .btn-red { width: 100%; padding: 14px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; text-transform: uppercase; }
-        
-        /* ÁREA DO APP */
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: none; background: var(--gray); color: #fff; box-sizing: border-box; }
+        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        /* HEADER */
+        header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; }
         #main-content { display: none; padding-top: 60px; }
-        #player-area { width: 100%; background: #000; aspect-ratio: 16/9; }
+        #player-area { width: 100%; aspect-ratio: 16/9; background: #000; position: sticky; top: 60px; z-index: 900; }
         video { width: 100%; height: 100%; }
 
-        /* PAINEL ADMINISTRATIVO */
-        #admin-panel { display: none; padding: 80px 15px 30px; background: #000; min-height: 100vh; }
+        /* CATEGORIAS E GRIDS (RESOLVENDO O TAMANHO DA IMAGEM) */
+        .row { padding: 15px 20px; }
+        .row-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; color: #e5e5e5; }
+        
+        /* Grid responsiva: as capas agora ficam pequenas e alinhadas */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
+            gap: 12px; 
+        }
+
+        .card { 
+            background: var(--card); 
+            border-radius: 4px; 
+            overflow: hidden; 
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .card:active { transform: scale(0.95); }
+        
+        .card img { 
+            width: 100%; 
+            aspect-ratio: 1/1; /* Mantém as logos dos canais quadradas e organizadas */
+            object-fit: cover; 
+            display: block; 
+        }
+
+        .card-name {
+            padding: 5px;
+            font-size: 10px;
+            text-align: center;
+            background: #1a1a1a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* PAINEL ADM */
+        #admin-panel { display: none; padding: 80px 15px 40px; background: #111; min-height: 100vh; }
         .admin-box { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--gray); }
-        h3 { margin-top: 0; color: var(--red); border-bottom: 1px solid var(--gray); padding-bottom: 10px; font-size: 18px; }
-
-        /* TABELAS */
-        .tabela-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th { text-align: left; color: #999; padding: 10px; border-bottom: 1px solid var(--gray); }
-        td { padding: 12px 10px; border-bottom: 1px solid #222; }
-        .btn-acao { padding: 6px 10px; border-radius: 4px; border: none; color: white; font-size: 11px; font-weight: bold; margin-right: 5px; }
-
-        /* CATEGORIAS APP */
-        .row { padding: 20px; }
-        .row-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-        .card { background: var(--card); border-radius: 4px; overflow: hidden; position: relative; }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        td, th { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
     </style>
 </head>
 <body>
 
     <div id="login-container">
         <div class="login-box">
-            <h1 style="color:var(--red); margin-bottom:20px">CLONEFLIX</h1>
+            <h1 style="color:var(--red)">CLONEFLIX</h1>
             <input type="text" id="user-login" placeholder="Usuário">
             <input type="password" id="pass-login" placeholder="Senha">
             <button class="btn-red" id="btn-entrar">ENTRAR</button>
@@ -59,48 +80,41 @@
     <div id="main-content">
         <header>
             <h2 style="color:var(--red); margin:0">CLONEFLIX</h2>
-            <button id="btn-abrir-adm" class="btn-red" style="display:none; width:auto; padding: 5px 15px; font-size:12px">PAINEL ADM</button>
+            <button id="btn-go-adm" class="btn-red" style="display:none; width:auto; padding: 5px 15px; font-size:12px">PAINEL ADM</button>
         </header>
         <div id="player-area"><video id="main-video" controls autoplay playsinline></video></div>
-        <div id="vitrine-categorias"></div>
+        <div id="vitrine"></div>
     </div>
 
     <div id="admin-panel">
-        <button class="btn-red" id="btn-voltar-app" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
+        <button class="btn-red" id="btn-back-app" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
 
         <div class="admin-box">
             <h3>Gerenciar Clientes</h3>
             <div style="display:flex; gap:10px; margin-bottom:15px">
                 <input type="text" id="adm-u" placeholder="Nome" style="margin:0">
                 <input type="text" id="adm-p" placeholder="Senha" style="margin:0">
-                <button class="btn-red" id="btn-criar-user" style="width:100px; margin:0">CRIAR</button>
+                <button class="btn-red" id="btn-add-user" style="width:80px; margin:0">ADD</button>
             </div>
-            <div class="tabela-container">
-                <table>
-                    <thead><tr><th>USUÁRIO</th><th>STATUS</th><th>AÇÕES</th></tr></thead>
-                    <tbody id="lista-clientes-adm"></tbody>
-                </table>
+            <div class="table-scroll">
+                <table><tbody id="lista-adm-usuarios"></tbody></table>
             </div>
         </div>
 
         <div class="admin-box">
-            <h3 id="txt-form-filme">Adicionar Conteúdo</h3>
+            <h3 id="form-title">Postar Conteúdo</h3>
             <input type="hidden" id="edit-id">
-            <input type="text" id="f-nome" placeholder="Nome do Filme/Canal">
-            <input type="text" id="f-cat" placeholder="Categoria (Ex: FILMES, IPTV)">
+            <input type="text" id="f-nome" placeholder="Nome do Canal (Ex: GLOBO)">
+            <input type="text" id="f-cat" placeholder="Categoria (Ex: CANAIS ABERTOS)">
             <input type="text" id="f-url" placeholder="Link .m3u8">
-            <input type="text" id="f-capa" placeholder="Link da Capa (Imagem)">
-            <button class="btn-red" id="btn-salvar-filme">PUBLICAR CONTEÚDO</button>
-            <button id="btn-cancelar-edit" class="btn-red" style="display:none; background:#555; margin-top:10px">CANCELAR EDIÇÃO</button>
+            <input type="text" id="f-capa" placeholder="Link da Logo/Capa">
+            <button class="btn-red" id="btn-save-content">SALVAR NO BANCO</button>
         </div>
 
         <div class="admin-box">
             <h3>Meus Conteúdos</h3>
-            <div class="tabela-container">
-                <table>
-                    <thead><tr><th>TÍTULO</th><th>CATEGORIA</th><th>AÇÕES</th></tr></thead>
-                    <tbody id="lista-filmes-adm"></tbody>
-                </table>
+            <div class="table-scroll">
+                <table><tbody id="lista-adm-conteudo"></tbody></table>
             </div>
         </div>
     </div>
@@ -122,127 +136,106 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // LOGIN
+        // LOGIN (Mesma lógica do print anterior)
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('user-login').value;
             const p = document.getElementById('pass-login').value;
-            if (u === "Rhuan" && p === "2026") { mostrarApp(true); return; }
+            if(u === "Rhuan" && p === "2026") { showApp(true); return; }
             const snap = await get(ref(db, 'usuarios'));
-            let ok = false;
+            let valid = false;
             snap.forEach(c => {
                 const d = c.val();
-                if(d.user === u && d.pass === p) {
-                    if(d.status === "suspenso") { alert("Acesso suspenso!"); return; }
-                    ok = true;
-                }
+                if(d.user === u && d.pass === p && d.status !== "suspenso") valid = true;
             });
-            if(ok) mostrarApp(false); else alert("Login inválido!");
+            if(valid) showApp(false); else alert("Acesso negado!");
         };
 
-        function mostrarApp(adm) {
+        function showApp(adm) {
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
-            if(adm) {
-                document.getElementById('btn-abrir-adm').style.display = 'block';
-                carregarListasAdm();
-            }
-            carregarVitrine();
+            if(adm) { document.getElementById('btn-go-adm').style.display = 'block'; loadAdm(); }
+            loadVitrine();
         }
 
-        // VITRINE CLIENTE
-        function carregarVitrine() {
+        // CARREGA VITRINE COM AGRUPAMENTO DE CATEGORIAS
+        function loadVitrine() {
             onValue(ref(db, 'conteudo'), (snap) => {
-                const vitrine = document.getElementById('vitrine-categorias');
-                vitrine.innerHTML = "";
-                let grupos = {};
-                snap.forEach(i => {
-                    const f = i.val(); const c = (f.categoria || "GERAL").toUpperCase();
-                    if(!grupos[c]) grupos[c] = []; grupos[c].push(f);
+                const v = document.getElementById('vitrine'); 
+                v.innerHTML = "";
+                let categoriasAgrupadas = {};
+
+                // Passo 1: Organizar dados no JavaScript primeiro
+                snap.forEach(item => {
+                    const data = item.val();
+                    const catNome = (data.categoria || "GERAL").toUpperCase();
+                    if(!categoriasAgrupadas[catNome]) categoriasAgrupadas[catNome] = [];
+                    categoriasAgrupadas[catNome].push(data);
                 });
-                Object.keys(grupos).forEach(cat => {
-                    const div = document.createElement('div'); div.className = 'row';
-                    div.innerHTML = `<div class="row-title">${cat}</div><div class="grid" id="grid-${cat}"></div>`;
-                    vitrine.appendChild(div);
-                    grupos[cat].forEach(filme => {
-                        const card = document.createElement('div'); card.className = 'card';
-                        card.innerHTML = `<img src="${filme.capa}">`;
+
+                // Passo 2: Criar o HTML uma única vez por categoria
+                Object.keys(categoriasAgrupadas).forEach(titulo => {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    row.innerHTML = `<div class="row-title">${titulo}</div><div class="grid" id="grid-${titulo.replace(/\s+/g, '')}"></div>`;
+                    v.appendChild(row);
+
+                    const grid = document.getElementById(`grid-${titulo.replace(/\s+/g, '')}`);
+                    categoriasAgrupadas[titulo].forEach(filme => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `<img src="${filme.capa}"><div class="card-name">${filme.nome}</div>`;
                         card.onclick = () => {
-                            const v = document.getElementById('main-video');
-                            if(Hls.isSupported()){ const hls = new Hls(); hls.loadSource(filme.url); hls.attachMedia(v); hls.on(Hls.Events.MANIFEST_PARSED, ()=>v.play()); }
+                            const vid = document.getElementById('main-video');
+                            if(Hls.isSupported()){ 
+                                const hls = new Hls(); hls.loadSource(filme.url); hls.attachMedia(vid); 
+                                hls.on(Hls.Events.MANIFEST_PARSED, ()=>vid.play()); 
+                            }
                             window.scrollTo(0,0);
                         };
-                        document.getElementById(`grid-${cat}`).appendChild(card);
+                        grid.appendChild(card);
                     });
                 });
             });
         }
 
-        // ADMINISTRAÇÃO
-        function carregarListasAdm() {
-            onValue(ref(db, 'usuarios'), (snap) => {
-                const lista = document.getElementById('lista-clientes-adm'); lista.innerHTML = "";
-                snap.forEach(c => {
+        // ADM FUNCTIONS
+        function loadAdm() {
+            onValue(ref(db, 'usuarios'), (s) => {
+                const l = document.getElementById('lista-adm-usuarios'); l.innerHTML = "";
+                s.forEach(c => {
                     const k = c.key; const v = c.val();
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${v.user}</td><td style="color:${v.status=='ativo'?'#28a745':'#ffc107'}">${v.status}</td>
-                        <td><button class="btn-acao" style="background:#444" onclick="window.altStatus('${k}','${v.status}')">STATUS</button>
-                        <button class="btn-acao" style="background:#E50914" onclick="window.delUser('${k}')">X</button></td>`;
-                    lista.appendChild(tr);
+                    l.innerHTML += `<tr><td>${v.user}</td><td>${v.status}</td><td><button onclick="window.altS('${k}','${v.status}')">ST</button></td></tr>`;
                 });
             });
-
-            onValue(ref(db, 'conteudo'), (snap) => {
-                const lista = document.getElementById('lista-filmes-adm'); lista.innerHTML = "";
-                snap.forEach(c => {
+            onValue(ref(db, 'conteudo'), (s) => {
+                const l = document.getElementById('lista-adm-conteudo'); l.innerHTML = "";
+                s.forEach(c => {
                     const k = c.key; const v = c.val();
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${v.nome}</td><td>${v.categoria}</td>
-                        <td><button class="btn-acao" style="background:#007bff" onclick="window.editarFilme('${k}')">EDITAR</button>
-                        <button class="btn-acao" style="background:#E50914" onclick="window.delFilme('${k}')">X</button></td>`;
-                    lista.appendChild(tr);
+                    l.innerHTML += `<tr><td>${v.nome}</td><td><button onclick="window.delF('${k}')">DEL</button></td></tr>`;
                 });
             });
         }
 
-        // AÇÕES GLOBAIS
-        window.altStatus = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
-        window.delUser = (k) => confirm("Excluir cliente?") && remove(ref(db, `usuarios/${k}`));
-        window.delFilme = (k) => confirm("Excluir conteúdo?") && remove(ref(db, `conteudo/${k}`));
-        
-        window.editarFilme = async (k) => {
-            const d = (await get(ref(db, `conteudo/${k}`))).val();
-            document.getElementById('edit-id').value = k;
-            document.getElementById('f-nome').value = d.nome;
-            document.getElementById('f-cat').value = d.categoria;
-            document.getElementById('f-url').value = d.url;
-            document.getElementById('f-capa').value = d.capa;
-            document.getElementById('txt-form-filme').innerText = "Editando Conteúdo";
-            document.getElementById('btn-cancelar-edit').style.display = "block";
-            window.scrollTo(0,0);
-        };
+        window.altS = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
+        window.delF = (k) => confirm("Excluir?") && remove(ref(db, `conteudo/${k}`));
 
-        document.getElementById('btn-criar-user').onclick = () => {
+        document.getElementById('btn-add-user').onclick = () => {
             const u = document.getElementById('adm-u').value; const p = document.getElementById('adm-p').value;
-            if(u && p) push(ref(db, 'usuarios'), {user:u, pass:p, status:'ativo'}).then(()=>alert("Criado!"));
+            if(u && p) push(ref(db, 'usuarios'), {user:u, pass:p, status:'ativo'});
         };
 
-        document.getElementById('btn-salvar-filme').onclick = () => {
-            const id = document.getElementById('edit-id').value;
-            const dados = { nome: document.getElementById('f-nome').value, categoria: document.getElementById('f-cat').value, url: document.getElementById('f-url').value, capa: document.getElementById('f-capa').value };
-            if(id) update(ref(db, `conteudo/${id}`), dados).then(()=> { alert("Atualizado!"); resetForm(); });
-            else push(ref(db, 'conteudo'), dados).then(()=> { alert("Publicado!"); resetForm(); });
+        document.getElementById('btn-save-content').onclick = () => {
+            const obj = { 
+                nome: document.getElementById('f-nome').value, 
+                categoria: document.getElementById('f-cat').value, 
+                url: document.getElementById('f-url').value, 
+                capa: document.getElementById('f-capa').value 
+            };
+            push(ref(db, 'conteudo'), obj).then(() => alert("Postado!"));
         };
 
-        function resetForm() {
-            document.getElementById('edit-id').value = ""; document.getElementById('f-nome').value = ""; document.getElementById('f-cat').value = "";
-            document.getElementById('f-url').value = ""; document.getElementById('f-capa').value = "";
-            document.getElementById('txt-form-filme').innerText = "Adicionar Conteúdo";
-            document.getElementById('btn-cancelar-edit').style.display = "none";
-        }
-
-        document.getElementById('btn-cancelar-edit').onclick = resetForm;
-        document.getElementById('btn-abrir-adm').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
-        document.getElementById('btn-voltar-app').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
+        document.getElementById('btn-go-adm').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
+        document.getElementById('btn-back-app').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
     </script>
 </body>
 </html>

@@ -2,80 +2,65 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CLONEFLIX - GERENCIADOR TOTAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Cloneflix</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; --green: #28a745; }
-        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        
-        /* LOGIN */
-        #login-container { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 5000; }
-        .login-box { background: rgba(20,20,20,0.95); padding: 40px; border-radius: 8px; width: 90%; max-width: 360px; text-align: center; border: 1px solid #333; }
+        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; }
+        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; padding: 20px; }
+        .admin-section { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #333; }
         input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 4px; border: none; background: #333; color: #fff; box-sizing: border-box; }
-        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-
-        /* HEADER */
-        header { position: fixed; top: 0; width: 100%; height: 60px; background: #000; display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid #333; }
+        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         
-        /* PAINEL ADM */
-        #admin-panel { display: none; padding: 80px 15px; background: #111; min-height: 100vh; }
-        .admin-section { background: #1c1c1c; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
-        
-        /* TABELA */
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #333; background: #222; margin-bottom: 5px; border-radius: 5px; flex-wrap: wrap; }
-        .user-info { flex: 1; min-width: 150px; }
-        .user-name { font-weight: bold; display: block; }
-        .user-status { font-size: 12px; text-transform: uppercase; }
-        .status-ativo { color: var(--green); }
-        .status-suspenso { color: var(--red); }
-        
-        .actions { display: flex; gap: 5px; margin-top: 5px; }
-        .btn-sm { padding: 6px 10px; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 11px; }
-        
-        #main-app { display: none; padding-top: 70px; }
+        /* Estilo da Tabela de Usuários */
+        .user-list { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .user-list th, .user-list td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        .status-ativo { color: #28a745; font-weight: bold; }
+        .status-suspenso { color: #ffc107; font-weight: bold; }
+        .btn-action { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; color: white; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="login-container">
-        <div class="login-box">
-            <h2 style="color:var(--red)">CLONEFLIX</h2>
-            <input type="text" id="user-login" placeholder="Usuário">
-            <input type="password" id="pass-login" placeholder="Senha">
-            <button class="btn-red" id="btn-entrar">ENTRAR</button>
-        </div>
+    <button class="btn-red" style="width: auto;" onclick="window.location.reload()">🔄 ATUALIZAR PAINEL</button>
+
+    <div class="admin-section">
+        <h3>Criar Novo Acesso</h3>
+        <input type="text" id="adm-u" placeholder="Nome do Usuário">
+        <input type="text" id="adm-p" placeholder="Senha">
+        <button class="btn-red" id="btn-save-user">SALVAR NO FIREBASE</button>
     </div>
 
-    <div id="main-app">
-        <header>
-            <h1 style="color:var(--red); font-size: 18px;">CLONEFLIX</h1>
-            <button id="btn-adm-view" class="btn-red" style="display:none; width:auto; padding: 5px 15px; background:#444">GERENCIAR</button>
-        </header>
-        <div id="player-area" style="width:100%; aspect-ratio:16/9; background:#000;"><video id="main-video" controls style="width:100%; height:100%;"></video></div>
-        <div id="grid-home" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:10px; padding:20px;"></div>
+    <div class="admin-section">
+        <h3>Usuários Cadastrados</h3>
+        <table class="user-list">
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>Senha</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-usuarios">
+                </tbody>
+        </table>
     </div>
 
-    <div id="admin-panel">
-        <button class="btn-red" id="btn-close-admin" style="width:auto; margin-bottom:20px">← VOLTAR</button>
-        
-        <div class="admin-section">
-            <h3>Novo Cliente</h3>
-            <input type="text" id="adm-u" placeholder="Nome">
-            <input type="text" id="adm-p" placeholder="Senha">
-            <button class="btn-red" id="btn-save-user">CRIAR AGORA</button>
-        </div>
-
-        <div class="admin-section">
-            <h3>Usuários no Banco</h3>
-            <div id="lista-clientes">Carregando usuários...</div>
-        </div>
+    <div class="admin-section">
+        <h3>Postar Conteúdo (M3U8)</h3>
+        <input type="text" id="f-nome" placeholder="Nome do Filme">
+        <input type="text" id="f-cat" placeholder="Categoria">
+        <input type="text" id="f-url" placeholder="Link .m3u8">
+        <input type="text" id="f-capa" placeholder="Link da Capa">
+        <button class="btn-red" id="btn-save-content">PUBLICAR AGORA</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // Sua configuração das fotos
         const firebaseConfig = {
             apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo",
             authDomain: "cloneflix-16f9c.firebaseapp.com",
@@ -89,87 +74,68 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // LOGIN
-        document.getElementById('btn-entrar').onclick = async () => {
-            const u = document.getElementById('user-login').value;
-            const p = document.getElementById('pass-login').value;
+        // --- FUNÇÃO PARA LISTAR USUÁRIOS EM TEMPO REAL ---
+        const tabela = document.getElementById('tabela-usuarios');
+        onValue(ref(db, 'usuarios'), (snapshot) => {
+            tabela.innerHTML = ""; // Limpa a tabela antes de carregar
+            snapshot.forEach((childSnapshot) => {
+                const key = childSnapshot.key;
+                const data = childSnapshot.val();
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${data.user}</td>
+                    <td>${data.pass}</td>
+                    <td class="${data.status === 'suspenso' ? 'status-suspenso' : 'status-ativo'}">
+                        ${data.status || 'ativo'}
+                    </td>
+                    <td>
+                        <button class="btn-action" style="background: #007bff;" id="btn-susp-${key}">
+                            ${data.status === 'suspenso' ? 'Ativar' : 'Suspender'}
+                        </button>
+                        <button class="btn-action" style="background: #dc3545;" id="btn-del-${key}">Excluir</button>
+                    </td>
+                `;
+                tabela.appendChild(tr);
 
-            if (u === "Rhuan" && p === "2026") { abrirApp(true); return; }
+                // Evento de Suspender/Ativar
+                document.getElementById(`btn-susp-${key}`).onclick = () => {
+                    const novoStatus = data.status === 'suspenso' ? 'ativo' : 'suspenso';
+                    update(ref(db, `usuarios/${key}`), { status: novoStatus });
+                };
 
-            const snapshot = await get(ref(db, 'usuarios'));
-            let valid = false;
-            snapshot.forEach(c => {
-                const d = c.val();
-                if(d.user === u && d.pass === p) {
-                    if(d.status === "suspenso") { alert("Conta suspensa!"); return; }
-                    valid = true;
-                }
+                // Evento de Excluir
+                document.getElementById(`btn-del-${key}`).onclick = () => {
+                    if(confirm("Deseja realmente excluir este usuário?")) {
+                        remove(ref(db, `usuarios/${key}`));
+                    }
+                };
             });
-            if(valid) abrirApp(false);
-            else alert("Dados incorretos!");
-        };
+        });
 
-        function abrirApp(isAdmin) {
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
-            if(isAdmin) {
-                document.getElementById('btn-adm-view').style.display = 'block';
-                monitorarUsuarios();
-            }
-        }
-
-        // SALVAR
+        // --- SALVAR NOVO USUÁRIO ---
         document.getElementById('btn-save-user').onclick = () => {
             const user = document.getElementById('adm-u').value;
             const pass = document.getElementById('adm-p').value;
             if(user && pass) {
-                push(ref(db, 'usuarios'), { user, pass, status: "ativo" })
-                .then(() => { alert("Criado!"); document.getElementById('adm-u').value=""; document.getElementById('adm-p').value=""; });
+                push(ref(db, 'usuarios'), { user, pass, status: 'ativo' })
+                .then(() => {
+                    alert("Usuário criado!");
+                    document.getElementById('adm-u').value = "";
+                    document.getElementById('adm-p').value = "";
+                });
             }
         };
 
-        // LISTA EM TEMPO REAL
-        function monitorarUsuarios() {
-            onValue(ref(db, 'usuarios'), (snap) => {
-                const container = document.getElementById('lista-clientes');
-                container.innerHTML = "";
-                
-                snap.forEach(child => {
-                    const key = child.key;
-                    const val = child.val();
-                    const div = document.createElement('div');
-                    div.className = 'user-row';
-                    div.innerHTML = `
-                        <div class="user-info">
-                            <span class="user-name">${val.user}</span>
-                            <span class="user-status ${val.status === 'ativo' ? 'status-ativo' : 'status-suspenso'}">${val.status}</span>
-                        </div>
-                        <div class="actions">
-                            <button class="btn-sm" style="background:#007bff" id="status-${key}">Alternar</button>
-                            <button class="btn-sm" style="background:red" id="del-${key}">Excluir</button>
-                        </div>
-                    `;
-                    container.appendChild(div);
-
-                    // BOTÕES (Eventos diretos para não falhar)
-                    document.getElementById(`status-${key}`).onclick = () => {
-                        const nStatus = val.status === 'ativo' ? 'suspenso' : 'ativo';
-                        update(ref(db, `usuarios/${key}`), { status: nStatus });
-                    };
-                    document.getElementById(`del-${key}`).onclick = () => {
-                        if(confirm("Excluir " + val.user + "?")) remove(ref(db, `usuarios/${key}`));
-                    };
-                });
-            });
-        }
-
-        document.getElementById('btn-adm-view').onclick = () => {
-            document.getElementById('main-app').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'block';
-        };
-        document.getElementById('btn-close-admin').onclick = () => {
-            document.getElementById('admin-panel').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
+        // --- SALVAR CONTEÚDO ---
+        document.getElementById('btn-save-content').onclick = () => {
+            const novoFilme = {
+                nome: document.getElementById('f-nome').value,
+                categoria: document.getElementById('f-cat').value,
+                url: document.getElementById('f-url').value,
+                capa: document.getElementById('f-capa').value
+            };
+            push(ref(db, 'conteudo'), novoFilme).then(() => alert("Conteúdo publicado!"));
         };
     </script>
 </body>

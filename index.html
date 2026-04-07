@@ -7,179 +7,198 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root { --bg: #0b0b0b; --red: #E50914; --card: #141414; --text: #fff; --gray: #2a2a2a; }
-        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid #222; }
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #333; background: var(--gray); color: #fff; box-sizing: border-box; font-size: 14px; }
-        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.95); display: flex; align-items: center; padding: 0 15px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid #222; }
+        
+        .btn-red { padding: 10px 15px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 11px; }
+        .btn-gray { background: #333; }
+        
         #main-content { display: none; padding-top: 60px; }
-        #player-area { width: 100%; aspect-ratio: 16/9; background: #000; position: sticky; top: 60px; z-index: 900; }
+        
+        /* PLAYER COMEÇA ESCONDIDO */
+        #player-area { width: 100%; aspect-ratio: 16/9; background: #000; position: sticky; top: 60px; z-index: 900; display: none; border-bottom: 2px solid var(--red); }
         video { width: 100%; height: 100%; }
         
-        /* ESTILO DAS CATEGORIAS (GRUPOS) */
-        .category-header { background: #1a1a1a; padding: 15px 20px; margin: 5px 0; cursor: pointer; border-left: 4px solid var(--red); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        .category-content { display: none; padding: 15px 20px; background: #080808; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
-        .card { background: var(--card); border-radius: 4px; overflow: hidden; cursor: pointer; border: 1px solid #222; }
+        #user-info { padding: 10px 15px; font-size: 12px; color: #888; background: #111; border-bottom: 1px solid #222; }
+
+        .category-item { background: #1a1a1a; padding: 18px; margin: 8px 15px; border-radius: 6px; cursor: pointer; border-left: 5px solid var(--red); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+
+        #detalhe-categoria { display: none; padding: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; }
+        .card { background: var(--card); border-radius: 4px; overflow: hidden; border: 1px solid #222; text-align: center; }
         .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
-        
-        /* INFO DE VALIDADE */
-        #user-info { padding: 10px 20px; font-size: 13px; color: #aaa; background: #111; border-bottom: 1px solid #222; }
+        .card-title { font-size: 10px; padding: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ccc; }
 
         #admin-panel { display: none; padding: 80px 15px 40px; background: #000; min-height: 100vh; }
-        .admin-box { background: #141414; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #222; }
-        .tabela-container { overflow-x: auto; margin-top: 15px; background: #000; padding: 5px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        td, th { padding: 10px; border-bottom: 1px solid #1a1a1a; text-align: left; }
-        .btn-acao { padding: 6px 10px; border-radius: 4px; border: none; color: #fff; cursor: pointer; font-size: 11px; margin-right: 4px; }
+        .admin-box { background: #141414; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #222; }
     </style>
 </head>
 <body>
 
     <div id="login-container" style="position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; z-index:9999;">
-        <div style="text-align:center; background:#141414; padding:35px; border-radius:12px; border:1px solid #333; width:85%; max-width:350px;">
-            <h1 style="color:var(--red); margin-bottom: 25px;">CLONEFLIX</h1>
-            <input type="text" id="u-l" placeholder="Usuário">
-            <input type="password" id="p-l" placeholder="Senha">
-            <button class="btn-red" id="b-e">ENTRAR NO SISTEMA</button>
+        <div style="text-align:center; background:#141414; padding:30px; border-radius:12px; border:1px solid #333; width:85%; max-width:320px;">
+            <h1 style="color:var(--red); margin-bottom: 20px; font-size: 26px;">CLONEFLIX</h1>
+            <input type="text" id="u-l" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; color:#fff; border:none; border-radius:6px;" placeholder="Usuário">
+            <input type="password" id="p-l" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; color:#fff; border:none; border-radius:6px;" placeholder="Senha">
+            <button class="btn-red" id="b-e" style="width:100%">ENTRAR</button>
         </div>
     </div>
 
     <div id="main-content">
         <header>
-            <h2 style="color:var(--red); margin:0;">CLONEFLIX</h2>
-            <button id="b-a" class="btn-red" style="display:none; width:auto; padding:6px 15px; font-size:11px;">PAINEL ADM</button>
+            <h2 style="color:var(--red); margin:0; font-size: 20px;">CLONEFLIX</h2>
+            <div style="display: flex; gap: 5px;">
+                <button id="b-a" class="btn-red" style="display:none;">ADM</button>
+                <button class="btn-red btn-gray" id="btn-logout-main">SAIR</button>
+            </div>
         </header>
-        <div id="player-area"><video id="main-video" controls autoplay playsinline></video></div>
-        <div id="user-info">Aguardando login...</div>
-        <div id="vitrine"></div>
+
+        <div id="player-area"><video id="main-video" controls playsinline></video></div>
+        
+        <div id="user-info"><b>VENCIMENTO:</b> <span id="txt-validade">---</span></div>
+
+        <div id="lista-categorias"></div>
+
+        <div id="detalhe-categoria">
+            <button class="btn-red" id="btn-voltar-cat" style="width:100%; margin-bottom:20px; background:#222;">← VOLTAR PARA GRUPOS</button>
+            <h3 id="nome-cat-titulo" style="margin-bottom:15px; border-left: 3px solid var(--red); padding-left: 10px;"></h3>
+            <div class="grid" id="grid-conteudo"></div>
+        </div>
     </div>
 
     <div id="admin-panel">
-        <button class="btn-red" id="b-v" style="width:auto; margin-bottom:25px; background:#333">← VOLTAR AO APP</button>
-        
-        <div class="admin-box">
-            <h3>Importar Lista M3U</h3>
-            <textarea id="m3u-i" rows="4" placeholder="Cole o #EXTINF aqui..."></textarea>
-            <button class="btn-red" id="btn-imp" style="background:#28a745">IMPORTAR AGORA</button>
+        <div style="display:flex; justify-content: space-between; margin-bottom: 20px;">
+            <button class="btn-red btn-gray" id="b-v-adm">← VOLTAR</button>
+            <button class="btn-red" id="btn-logout-adm">SAIR</button>
         </div>
-
         <div class="admin-box">
-            <h3>Clientes</h3>
-            <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                <input type="hidden" id="edit-user-id">
-                <input id="a-u" placeholder="Usuário" style="flex:2">
-                <input id="a-p" placeholder="Senha" style="flex:1">
-                <input id="a-d" type="number" placeholder="Dias" style="width:70px">
-                <button id="b-c-u" class="btn-red">SALVAR</button>
-            </div>
-            <div class="tabela-container">
-                <table>
-                    <thead><tr><th>USUÁRIO</th><th>SENHA</th><th>RESTANTE</th><th>STATUS</th><th>AÇÕES</th></tr></thead>
-                    <tbody id="l-u"></tbody>
-                </table>
-            </div>
+            <h3>Importar M3U</h3>
+            <textarea id="m3u-i" rows="3" style="width:100%; background:#2a2a2a; color:#fff; border:none; border-radius:6px;" placeholder="Cole o #EXTINF aqui..."></textarea>
+            <button class="btn-red" id="btn-imp" style="background:#28a745; width:100%; margin-top:10px;">IMPORTAR</button>
         </div>
-
         <div class="admin-box">
-            <h3>Conteúdos</h3>
-            <input type="hidden" id="e-id">
-            <input id="f-n" placeholder="Nome">
-            <input id="f-c" placeholder="Categoria">
-            <input id="f-u" placeholder="Link M3U8">
-            <input id="f-p" placeholder="Link Capa">
-            <button class="btn-red" id="b-s">PUBLICAR</button>
-            <div class="tabela-container">
-                <table>
-                    <thead><tr><th>TÍTULO</th><th>CATEGORIA</th><th>AÇÕES</th></tr></thead>
-                    <tbody id="l-c"></tbody>
-                </table>
-            </div>
+            <h3>Usuários</h3>
+            <div id="l-u"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
 
+        let dadosConteudo = {};
+        const video = document.getElementById('main-video');
+        const playerArea = document.getElementById('player-area');
+        let currentContentId = "";
+
+        // LOGIN / LOGOUT
         document.getElementById('b-e').onclick = async () => {
             const user = document.getElementById('u-l').value;
             const pass = document.getElementById('p-l').value;
-            if(user === "Rhuan" && pass === "2026") { logado(true, "ADMIN"); return; }
-
+            if(user === "Rhuan" && pass === "2026") return logado(true, "ADMIN");
             const snap = await get(ref(db, 'usuarios'));
-            let validUser = null;
-            snap.forEach(i => {
-                const d = i.val();
-                if(d.user === user && d.pass === pass) validUser = d;
-            });
-
-            if(validUser) {
-                if(validUser.status !== 'ativo') { alert("Acesso Suspenso!"); return; }
-                if(validUser.expira !== "Vitalício" && new Date().getTime() > validUser.expira) { alert("Acesso Expirado!"); return; }
-                
-                let validadeTxt = "Vitalício";
-                if(validUser.expira !== "Vitalício") {
-                    const dias = Math.ceil((validUser.expira - new Date().getTime()) / (1000*60*60*24));
-                    validadeTxt = dias + " dias restantes";
-                }
-                logado(false, validadeTxt);
-            } else { alert("Login Inválido!"); }
+            let v = null;
+            snap.forEach(i => { if(i.val().user === user && i.val().pass === pass) v = i.val(); });
+            if(v) logado(false, v.expira === "Vitalício" ? "VITALÍCIO" : "ATIVO");
+            else alert("Erro!");
         };
 
-        function logado(adm, validade) {
+        document.getElementById('btn-logout-main').onclick = () => location.reload();
+        document.getElementById('btn-logout-adm').onclick = () => location.reload();
+
+        function logado(adm, val) {
             document.getElementById('login-container').style.display='none';
             document.getElementById('main-content').style.display='block';
-            document.getElementById('user-info').innerHTML = `<b>Status do Acesso:</b> ${validade}`;
+            document.getElementById('txt-validade').innerText = val;
             if(adm) document.getElementById('b-a').style.display='block';
             carregar();
         }
 
         function carregar() {
-            // VITRINE COM CATEGORIAS RETRÁTEIS
             onValue(ref(db, 'conteudo'), (s) => {
-                const vit = document.getElementById('vitrine'); vit.innerHTML = "";
-                const tabC = document.getElementById('l-c'); tabC.innerHTML = "";
-                let cats = {};
+                dadosConteudo = {};
                 s.forEach(i => {
-                    const d = i.val(); const k = i.key;
-                    if(!cats[d.categoria]) cats[d.categoria] = []; cats[d.categoria].push({...d, k});
-                    tabC.innerHTML += `<tr><td>${d.nome}</td><td>${d.categoria}</td><td><button class="btn-acao" style="background:#007bff" onclick="window.editC('${k}')">EDIT</button><button class="btn-acao" style="background:red" onclick="window.delC('${k}')">X</button></td></tr>`;
+                    const d = i.val();
+                    if(!dadosConteudo[d.categoria]) dadosConteudo[d.categoria] = [];
+                    dadosConteudo[d.categoria].push({...d, id: i.key});
                 });
-                for(let c in cats){
-                    const divCat = document.createElement('div');
-                    divCat.innerHTML = `<div class="category-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'"><span>${c}</span> <span>▼</span></div><div class="category-content"><div class="grid" id="grid-${c.replace(/\s+/g, '')}"></div></div>`;
-                    vit.appendChild(divCat);
-                    cats[c].forEach(f => {
-                        const card = document.createElement('div'); card.className='card'; card.innerHTML=`<img src="${f.capa}"><div style="font-size:10px; text-align:center; padding:5px;">${f.nome}</div>`;
-                        card.onclick = () => { if(Hls.isSupported()){ const hls = new Hls(); hls.loadSource(f.url); hls.attachMedia(document.getElementById('main-video')); hls.on(Hls.Events.MANIFEST_PARSED, ()=>document.getElementById('main-video').play()); } window.scrollTo(0,0); };
-                        document.getElementById(`grid-${c.replace(/\s+/g, '')}`).appendChild(card);
-                    });
-                }
-            });
-
-            onValue(ref(db, 'usuarios'), (s) => {
-                const tabU = document.getElementById('l-u'); tabU.innerHTML = "";
-                s.forEach(i => {
-                    const k = i.key; const v = i.val();
-                    let resto = v.expira === "Vitalício" ? "Vitalício" : Math.ceil((v.expira - new Date().getTime()) / (1000*60*60*24)) + " dias";
-                    if(v.expira !== "Vitalício" && resto.split(' ')[0] <= 0) resto = "EXPIRADO";
-                    tabU.innerHTML += `<tr><td>${v.user}</td><td>${v.pass}</td><td>${resto}</td><td>${v.status}</td><td><button class="btn-acao" style="background:#444" onclick="window.stU('${k}','${v.status}')">ST</button><button class="btn-acao" style="background:#007bff" onclick="window.editU('${k}')">EDIT</button><button class="btn-acao" style="background:red" onclick="window.delU('${k}')">X</button></td></tr>`;
-                });
+                renderCategorias();
             });
         }
 
-        // FUNÇÕES ADM (IGUAIS AO ANTERIOR)
-        document.getElementById('b-c-u').onclick = () => {
-            const id = document.getElementById('edit-user-id').value;
-            const dias = document.getElementById('a-d').value;
-            let exp = (dias && dias != "999") ? new Date().getTime() + (dias * 24 * 60 * 60 * 1000) : "Vitalício";
-            const obj = { user: document.getElementById('a-u').value, pass: document.getElementById('a-p').value, expira: exp, status: 'ativo' };
-            if(id) update(ref(db, `usuarios/${id}`), obj).then(()=>alert("Salvo!")); else push(ref(db, 'usuarios'), obj).then(()=>alert("Criado!"));
+        function renderCategorias() {
+            const lista = document.getElementById('lista-categorias');
+            lista.innerHTML = "";
+            Object.keys(dadosConteudo).sort().forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'category-item';
+                div.innerHTML = `<span>${cat}</span> <span>❯</span>`;
+                div.onclick = () => {
+                    document.getElementById('lista-categorias').style.display='none';
+                    document.getElementById('detalhe-categoria').style.display='block';
+                    document.getElementById('nome-cat-titulo').innerText = cat;
+                    const grid = document.getElementById('grid-conteudo');
+                    grid.innerHTML = "";
+                    dadosConteudo[cat].forEach(f => {
+                        const card = document.createElement('div');
+                        card.className='card';
+                        card.innerHTML = `<img src="${f.capa}"><div class="card-title">${f.nome}</div>`;
+                        card.onclick = () => playVideo(f.url, f.id, cat);
+                        grid.appendChild(card);
+                    });
+                };
+                lista.appendChild(div);
+            });
+        }
+
+        // VOLTAR PARA GRUPOS: PARA VÍDEO E SOME PLAYER
+        document.getElementById('btn-voltar-cat').onclick = () => {
+            video.pause();
+            video.src = "";
+            playerArea.style.display = 'none'; // Some a parte do vídeo
+            document.getElementById('detalhe-categoria').style.display='none';
+            document.getElementById('lista-categorias').style.display='block';
         };
 
+        function playVideo(url, id, cat) {
+            currentContentId = id;
+            playerArea.style.display = 'block'; // Aparece o vídeo
+            
+            if(Hls.isSupported()){
+                const hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    // Lógica de Retomar (Filmes e Séries)
+                    if(cat.includes("FILME") || cat.includes("SÉRIE") || cat.includes("SERIE")){
+                        const savedTime = localStorage.getItem('time_' + id);
+                        if(savedTime && savedTime > 10){
+                            if(confirm("Deseja continuar de onde parou?")){
+                                video.currentTime = parseFloat(savedTime);
+                            }
+                        }
+                    }
+                    video.play();
+                });
+            }
+            window.scrollTo(0,0);
+        }
+
+        // SALVAR TEMPO PERIODICAMENTE
+        setInterval(() => {
+            if(!video.paused && currentContentId){
+                localStorage.setItem('time_' + currentContentId, video.currentTime);
+            }
+        }, 5000);
+
+        // FUNÇÕES ADM
+        document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
+        document.getElementById('b-v-adm').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
+        
         document.getElementById('btn-imp').onclick = async () => {
             const linhas = document.getElementById('m3u-i').value.split('\n');
             for(let i=0; i<linhas.length; i++){
@@ -188,24 +207,11 @@
                     const n = linhas[i].split(',')[1] || "S/N";
                     const c = linhas[i].includes('group-title="') ? linhas[i].split('group-title="')[1].split('"')[0] : "GERAL";
                     const p = linhas[i].includes('tvg-logo="') ? linhas[i].split('tvg-logo="')[1].split('"')[0] : "";
-                    await push(ref(db, 'conteudo'), { nome: n.trim(), categoria: c.toUpperCase(), url: url, capa: p });
+                    if(url) await push(ref(db, 'conteudo'), { nome: n.trim(), categoria: c.toUpperCase(), url, capa: p });
                 }
             }
-            alert("Importado!"); document.getElementById('m3u-i').value="";
+            alert("Importado!");
         };
-
-        window.editU = async (k) => { const d = (await get(ref(db, `usuarios/${k}`))).val(); document.getElementById('edit-user-id').value=k; document.getElementById('a-u').value=d.user; document.getElementById('a-p').value=d.pass; };
-        window.delU = (k) => confirm("Excluir?") && remove(ref(db, `usuarios/${k}`));
-        window.stU = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
-        window.editC = async (k) => { const d = (await get(ref(db, `conteudo/${k}`))).val(); document.getElementById('e-id').value=k; document.getElementById('f-n').value=d.nome; document.getElementById('f-c').value=d.categoria; document.getElementById('f-u').value=d.url; document.getElementById('f-p').value=d.capa; window.scrollTo(0,400); };
-        window.delC = (k) => confirm("Excluir?") && remove(ref(db, `conteudo/${k}`));
-        document.getElementById('b-s').onclick = () => {
-            const id = document.getElementById('e-id').value;
-            const obj = { nome: document.getElementById('f-n').value, categoria: document.getElementById('f-c').value.toUpperCase(), url: document.getElementById('f-u').value, capa: document.getElementById('f-p').value };
-            if(id) update(ref(db, `conteudo/${id}`), obj).then(()=>alert("Salvo!")); else push(ref(db, 'conteudo'), obj);
-        };
-        document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
-        document.getElementById('b-v').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
     </script>
 </body>
 </html>

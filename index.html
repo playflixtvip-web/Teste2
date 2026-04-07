@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CLONEFLIX - GERENCIADOR PRO</title>
+    <title>CLONEFLIX - GERENCIADOR TOTAL</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; --green: #28a745; --gray: #555; }
+        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; --green: #28a745; }
         body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; }
         
         /* LOGIN */
@@ -18,15 +18,21 @@
         /* HEADER */
         header { position: fixed; top: 0; width: 100%; height: 60px; background: #000; display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid #333; }
         
-        /* TABELA DE USUÁRIOS */
-        .admin-section { background: #1c1c1c; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
-        .status-ativo { color: var(--green); font-weight: bold; }
-        .status-suspenso { color: var(--red); font-weight: bold; }
-        .btn-action { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 12px; color: white; }
-        
+        /* PAINEL ADM */
         #admin-panel { display: none; padding: 80px 15px; background: #111; min-height: 100vh; }
+        .admin-section { background: #1c1c1c; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
+        
+        /* TABELA */
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #333; background: #222; margin-bottom: 5px; border-radius: 5px; flex-wrap: wrap; }
+        .user-info { flex: 1; min-width: 150px; }
+        .user-name { font-weight: bold; display: block; }
+        .user-status { font-size: 12px; text-transform: uppercase; }
+        .status-ativo { color: var(--green); }
+        .status-suspenso { color: var(--red); }
+        
+        .actions { display: flex; gap: 5px; margin-top: 5px; }
+        .btn-sm { padding: 6px 10px; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 11px; }
+        
         #main-app { display: none; padding-top: 70px; }
     </style>
 </head>
@@ -51,27 +57,18 @@
     </div>
 
     <div id="admin-panel">
-        <button class="btn-red" id="btn-close-admin" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
+        <button class="btn-red" id="btn-close-admin" style="width:auto; margin-bottom:20px">← VOLTAR</button>
         
         <div class="admin-section">
-            <h3>Cadastrar Novo Cliente</h3>
+            <h3>Novo Cliente</h3>
             <input type="text" id="adm-u" placeholder="Nome">
             <input type="text" id="adm-p" placeholder="Senha">
-            <button class="btn-red" id="btn-save-user">CRIAR ACESSO</button>
+            <button class="btn-red" id="btn-save-user">CRIAR AGORA</button>
         </div>
 
         <div class="admin-section">
-            <h3>Lista de Clientes</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Usuário</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-usuarios"></tbody>
-            </table>
+            <h3>Usuários no Banco</h3>
+            <div id="lista-clientes">Carregando usuários...</div>
         </div>
     </div>
 
@@ -92,7 +89,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // LOGIN COM VERIFICAÇÃO DE STATUS
+        // LOGIN
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('user-login').value;
             const p = document.getElementById('pass-login').value;
@@ -100,18 +97,16 @@
             if (u === "Rhuan" && p === "2026") { abrirApp(true); return; }
 
             const snapshot = await get(ref(db, 'usuarios'));
-            let userFound = null;
-            snapshot.forEach(child => {
-                const data = child.val();
-                if(data.user === u && data.pass === p) userFound = data;
+            let valid = false;
+            snapshot.forEach(c => {
+                const d = c.val();
+                if(d.user === u && d.pass === p) {
+                    if(d.status === "suspenso") { alert("Conta suspensa!"); return; }
+                    valid = true;
+                }
             });
-
-            if(userFound) {
-                if(userFound.status === "suspenso") alert("Sua conta está suspensa! Entre em contato com o administrador.");
-                else abrirApp(false);
-            } else {
-                alert("Usuário ou senha incorretos.");
-            }
+            if(valid) abrirApp(false);
+            else alert("Dados incorretos!");
         };
 
         function abrirApp(isAdmin) {
@@ -119,58 +114,59 @@
             document.getElementById('main-app').style.display = 'block';
             if(isAdmin) {
                 document.getElementById('btn-adm-view').style.display = 'block';
-                carregarGerenciador();
+                monitorarUsuarios();
             }
         }
 
-        // SALVAR NOVO USUÁRIO COM STATUS ATIVO
+        // SALVAR
         document.getElementById('btn-save-user').onclick = () => {
             const user = document.getElementById('adm-u').value;
             const pass = document.getElementById('adm-p').value;
             if(user && pass) {
-                push(ref(db, 'usuarios'), { user, pass, status: "ativo" }).then(() => alert("Usuário criado!"));
+                push(ref(db, 'usuarios'), { user, pass, status: "ativo" })
+                .then(() => { alert("Criado!"); document.getElementById('adm-u').value=""; document.getElementById('adm-p').value=""; });
             }
         };
 
-        // CARREGAR TABELA DE GERENCIAMENTO
-        function carregarGerenciador() {
+        // LISTA EM TEMPO REAL
+        function monitorarUsuarios() {
             onValue(ref(db, 'usuarios'), (snap) => {
-                const tbody = document.getElementById('tabela-usuarios');
-                tbody.innerHTML = "";
+                const container = document.getElementById('lista-clientes');
+                container.innerHTML = "";
+                
                 snap.forEach(child => {
                     const key = child.key;
                     const val = child.val();
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${val.user}</td>
-                        <td class="${val.status === 'ativo' ? 'status-ativo' : 'status-suspenso'}">${val.status.toUpperCase()}</td>
-                        <td>
-                            <button class="btn-action" style="background:#007bff" onclick="window.mudarStatus('${key}', '${val.status}')">Alternar</button>
-                            <button class="btn-action" style="background:red" onclick="window.deletarUsuario('${key}')">Excluir</button>
-                        </td>
+                    const div = document.createElement('div');
+                    div.className = 'user-row';
+                    div.innerHTML = `
+                        <div class="user-info">
+                            <span class="user-name">${val.user}</span>
+                            <span class="user-status ${val.status === 'ativo' ? 'status-ativo' : 'status-suspenso'}">${val.status}</span>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-sm" style="background:#007bff" id="status-${key}">Alternar</button>
+                            <button class="btn-sm" style="background:red" id="del-${key}">Excluir</button>
+                        </div>
                     `;
-                    tbody.appendChild(tr);
+                    container.appendChild(div);
+
+                    // BOTÕES (Eventos diretos para não falhar)
+                    document.getElementById(`status-${key}`).onclick = () => {
+                        const nStatus = val.status === 'ativo' ? 'suspenso' : 'ativo';
+                        update(ref(db, `usuarios/${key}`), { status: nStatus });
+                    };
+                    document.getElementById(`del-${key}`).onclick = () => {
+                        if(confirm("Excluir " + val.user + "?")) remove(ref(db, `usuarios/${key}`));
+                    };
                 });
             });
         }
-
-        // FUNÇÕES GLOBAIS DE AÇÃO
-        window.mudarStatus = (key, statusAtual) => {
-            const novoStatus = statusAtual === "ativo" ? "suspenso" : "ativo";
-            update(ref(db, `usuarios/${key}`), { status: novoStatus });
-        };
-
-        window.deletarUsuario = (key) => {
-            if(confirm("Tem certeza que deseja excluir este cliente?")) {
-                remove(ref(db, `usuarios/${key}`));
-            }
-        };
 
         document.getElementById('btn-adm-view').onclick = () => {
             document.getElementById('main-app').style.display = 'none';
             document.getElementById('admin-panel').style.display = 'block';
         };
-
         document.getElementById('btn-close-admin').onclick = () => {
             document.getElementById('admin-panel').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';

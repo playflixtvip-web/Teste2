@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PAINEL ADMINISTRATIVO - CLONEFLIX</title>
+    <title>CLONEFLIX VIP - GESTÃO DE PRAZOS</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root { --bg: #000; --red: #E50914; --card: #141414; --text: #fff; --gray: #333; }
@@ -22,20 +22,20 @@
         .admin-box { background: #111; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #222; }
         h3 { color: var(--red); margin: 0 0 15px 0; font-size: 16px; border-bottom: 1px solid #222; padding-bottom: 10px; }
         .tabela-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 5px; }
         th { text-align: left; color: #888; padding: 8px; border-bottom: 1px solid #333; }
         td { padding: 8px; border-bottom: 1px solid #222; vertical-align: middle; }
-        .btn-acao { padding: 6px 8px; border-radius: 3px; border: none; color: #fff; cursor: pointer; font-size: 10px; font-weight: bold; margin-right: 2px; }
+        .btn-acao { padding: 6px 8px; border-radius: 3px; border: none; color: #fff; cursor: pointer; font-size: 9px; font-weight: bold; margin-right: 2px; }
     </style>
 </head>
 <body>
 
     <div id="login-container" style="position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; z-index:9999;">
         <div class="login-box" style="text-align:center; background:#111; padding:30px; border-radius:8px; border:1px solid #333; width:85%; max-width:350px;">
-            <h1 style="color:var(--red); margin-bottom: 20px;">CLONEFLIX</h1>
+            <h1 style="color:var(--red)">CLONEFLIX</h1>
             <input type="text" id="u-l" placeholder="Usuário">
             <input type="password" id="p-l" placeholder="Senha">
-            <button class="btn-red" id="b-e">ENTRAR NO SISTEMA</button>
+            <button class="btn-red" id="b-e">ENTRAR</button>
         </div>
     </div>
 
@@ -46,48 +46,45 @@
     </div>
 
     <div id="admin-panel">
-        <button class="btn-red" id="b-v" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
+        <button class="btn-red" id="b-v" style="width:auto; margin-bottom:20px">← VOLTAR</button>
 
         <div class="admin-box">
-            <h3>Importar Lista (Texto M3U)</h3>
-            <textarea id="m3u-i" placeholder="Cole o texto #EXTINF aqui para importar muitos canais de uma vez..."></textarea>
-            <button class="btn-red" id="btn-imp" style="background:#28a745">IMPORTAR LISTA AGORA</button>
-        </div>
-
-        <div class="admin-box">
-            <h3>Gerenciar Clientes</h3>
-            <div style="display:flex; gap:5px; margin-bottom: 10px;">
+            <h3>Gerenciar Clientes (Vendas)</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom: 10px;">
                 <input type="hidden" id="edit-user-id">
-                <input id="a-u" placeholder="Novo Usuário" style="margin:0">
-                <input id="a-p" placeholder="Senha" style="margin:0">
-                <button id="b-c-u" class="btn-red" style="width:80px; margin:0">SALVAR</button>
+                <input id="a-u" placeholder="Usuário" style="flex:1; min-width:100px">
+                <input id="a-p" placeholder="Senha" style="flex:1; min-width:100px">
+                <input id="a-d" type="number" placeholder="Dias (Ex: 30)" style="flex:1; min-width:80px">
+                <button id="b-c-u" class="btn-red" style="width:100%">SALVAR OU RENOVAR ACESSO</button>
             </div>
+            <p style="font-size:10px; color:#888">* Deixe dias em branco ou use 999 para Vitalício.</p>
             <div class="tabela-container">
                 <table>
-                    <thead><tr><th>USUÁRIO</th><th>SENHA</th><th>STATUS</th><th>AÇÕES</th></tr></thead>
+                    <thead><tr><th>USUÁRIO</th><th>SENHA</th><th>RESTANTE</th><th>STATUS</th><th>AÇÕES</th></tr></thead>
                     <tbody id="l-u"></tbody>
                 </table>
             </div>
         </div>
 
         <div class="admin-box">
-            <h3 id="t-f">Adicionar/Editar Conteúdo</h3>
+            <h3>Importar Lista M3U</h3>
+            <textarea id="m3u-i" placeholder="Cole o texto #EXTINF aqui..."></textarea>
+            <button class="btn-red" id="btn-imp" style="background:#28a745">IMPORTAR TUDO</button>
+        </div>
+
+        <div class="admin-box">
+            <h3 id="t-f">Adicionar Conteúdo</h3>
             <input type="hidden" id="e-id">
-            <input type="text" id="f-n" placeholder="Título (Ex: Globo HD)">
-            <input type="text" id="f-c" placeholder="Categoria (Ex: CANAIS ABERTOS)">
-            <input type="text" id="f-u" placeholder="Link do Stream (.m3u8)">
-            <input type="text" id="f-p" placeholder="Link da Capa/Logo">
-            <button class="btn-red" id="b-s">PUBLICAR AGORA</button>
+            <input type="text" id="f-n" placeholder="Nome">
+            <input type="text" id="f-c" placeholder="Categoria">
+            <input type="text" id="f-u" placeholder="Link .m3u8">
+            <input type="text" id="f-p" placeholder="Link da Capa">
+            <button class="btn-red" id="b-s">SALVAR CONTEÚDO</button>
         </div>
 
         <div class="admin-box">
             <h3>Meus Conteúdos</h3>
-            <div class="tabela-container">
-                <table>
-                    <thead><tr><th>TÍTULO</th><th>CATEGORIA</th><th>AÇÕES</th></tr></thead>
-                    <tbody id="l-c"></tbody>
-                </table>
-            </div>
+            <table><thead><tr><th>TÍTULO</th><th>CAT</th><th>AÇÕES</th></tr></thead><tbody id="l-c"></tbody></table>
         </div>
     </div>
 
@@ -98,98 +95,129 @@
         const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
 
-        // LOGIN ADM
-        document.getElementById('b-e').onclick = () => { 
-            if(document.getElementById('u-l').value==="Rhuan" && document.getElementById('p-l').value==="2026"){ 
-                document.getElementById('login-container').style.display='none'; 
-                document.getElementById('main-content').style.display='block'; 
-                document.getElementById('b-a').style.display='block'; 
-                carregar(); 
-            } else { alert("Login Administrativo Inválido"); }
+        // LOGIN COM VERIFICAÇÃO DE PRAZO
+        document.getElementById('b-e').onclick = async () => {
+            const user = document.getElementById('u-l').value;
+            const pass = document.getElementById('p-l').value;
+
+            if(user === "Rhuan" && pass === "2026") { loginSucesso(true); return; }
+
+            const snap = await get(ref(db, 'usuarios'));
+            let valid = false;
+            snap.forEach(i => {
+                const d = i.val();
+                if(d.user === user && d.pass === pass) {
+                    if(d.status !== "ativo") { alert("Acesso Suspenso!"); return; }
+                    
+                    // Verifica Data
+                    if(d.expira !== "Vitalício") {
+                        const hoje = new Date().getTime();
+                        if(hoje > d.expira) { alert("Acesso Expirado! Contate o suporte."); return; }
+                    }
+                    valid = true;
+                }
+            });
+
+            if(valid) loginSucesso(false); else alert("Usuário ou Senha incorretos!");
         };
 
+        function loginSucesso(adm) {
+            document.getElementById('login-container').style.display='none';
+            document.getElementById('main-content').style.display='block';
+            if(adm) document.getElementById('b-a').style.display='block';
+            carregar();
+        }
+
         function carregar() {
-            // CARREGAR CONTEÚDO (VITRINE E LISTA ADM)
+            // CONTEUDO
             onValue(ref(db, 'conteudo'), (s) => {
-                const v = document.getElementById('vitrine'); v.innerHTML = ""; let cats = {};
+                const v = document.getElementById('vitrine'); v.innerHTML = "";
                 const lc = document.getElementById('l-c'); lc.innerHTML = "";
+                let cats = {};
                 s.forEach(i => {
                     const d = i.val(); const k = i.key;
                     if(!cats[d.categoria]) cats[d.categoria] = []; cats[d.categoria].push(d);
                     lc.innerHTML += `<tr><td>${d.nome}</td><td>${d.categoria}</td><td><button class="btn-acao" style="background:#007bff" onclick="window.edit('${k}')">EDIT</button><button class="btn-acao" style="background:red" onclick="window.del('${k}')">X</button></td></tr>`;
                 });
                 for(let c in cats){
-                    const r = document.createElement('div'); r.className='row'; r.innerHTML=`<div style="font-size:14px; font-weight:bold; margin-bottom:10px; color:#ccc">${c}</div><div class="grid" id="g-${c.replace(/\s+/g, '')}"></div>`; v.appendChild(r);
+                    const r = document.createElement('div'); r.className='row'; r.innerHTML=`<div style="font-size:14px; font-weight:bold; margin-bottom:10px">${c}</div><div class="grid" id="g-${c.replace(/\s+/g, '')}"></div>`; v.appendChild(r);
                     cats[c].forEach(f => {
-                        const card = document.createElement('div'); card.className='card'; card.innerHTML=`<img src="${f.capa}"><div style="font-size:9px; text-align:center; padding:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.nome}</div>`;
+                        const card = document.createElement('div'); card.className='card'; card.innerHTML=`<img src="${f.capa}"><div style="font-size:9px; text-align:center; padding:4px;">${f.nome}</div>`;
                         card.onclick = () => { if(Hls.isSupported()){ const hls = new Hls(); hls.loadSource(f.url); hls.attachMedia(document.getElementById('main-video')); hls.on(Hls.Events.MANIFEST_PARSED, ()=>document.getElementById('main-video').play()); } window.scrollTo(0,0); };
                         document.getElementById('g-'+c.replace(/\s+/g, '')).appendChild(card);
                     });
                 }
             });
 
-            // CARREGAR USUÁRIOS
+            // USUARIOS COM CALCULO DE DIAS
             onValue(ref(db, 'usuarios'), (s) => {
                 const lu = document.getElementById('l-u'); lu.innerHTML = "";
-                s.forEach(i => { 
-                    const k = i.key; const v = i.val(); 
-                    lu.innerHTML += `<tr><td>${v.user}</td><td>${v.pass}</td><td style="color:${v.status=='ativo'?'#28a745':'#ffc107'}">${v.status.toUpperCase()}</td><td>
+                s.forEach(i => {
+                    const k = i.key; const v = i.val();
+                    let diasFaltando = "";
+                    
+                    if(v.expira === "Vitalício") {
+                        diasFaltando = "Infinito";
+                    } else {
+                        const msec = v.expira - new Date().getTime();
+                        const dias = Math.ceil(msec / (1000 * 60 * 60 * 24));
+                        diasFaltando = dias > 0 ? dias + " dias" : "EXPIRADO";
+                    }
+
+                    lu.innerHTML += `<tr><td>${v.user}</td><td>${v.pass}</td><td style="color:${diasFaltando=='EXPIRADO'?'red':'#00ff00'}">${diasFaltando}</td><td>${v.status}</td><td>
                         <button class="btn-acao" style="background:#444" onclick="window.st('${k}','${v.status}')">ST</button>
-                        <button class="btn-acao" style="background:#007bff" onclick="window.editU('${k}')">EDIT</button>
-                        <button class="btn-acao" style="background:red" onclick="window.delU('${k}')">X</button></td></tr>`; 
+                        <button class="btn-acao" style="background:#007bff" onclick="window.editU('${k}')">RENOVAR</button>
+                        <button class="btn-acao" style="background:red" onclick="window.delU('${k}')">X</button></td></tr>`;
                 });
             });
         }
 
-        // FUNÇÕES GLOBAIS DE CONTEÚDO
-        window.del = (k) => confirm("Excluir conteúdo?") && remove(ref(db, `conteudo/${k}`));
-        window.edit = async (k) => { 
-            const d = (await get(ref(db, `conteudo/${k}`))).val(); 
-            document.getElementById('e-id').value=k; document.getElementById('f-n').value=d.nome; 
-            document.getElementById('f-c').value=d.categoria; document.getElementById('f-u').value=d.url; 
-            document.getElementById('f-p').value=d.capa; document.getElementById('t-f').innerText="EDITANDO: "+d.nome; window.scrollTo(0,400); 
-        };
-
-        // FUNÇÕES GLOBAIS DE USUÁRIO
-        window.delU = (k) => confirm("Excluir usuário?") && remove(ref(db, `usuarios/${k}`));
-        window.st = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
-        window.editU = async (k) => {
-            const d = (await get(ref(db, `usuarios/${k}`))).val();
-            document.getElementById('edit-user-id').value = k;
-            document.getElementById('a-u').value = d.user;
-            document.getElementById('a-p').value = d.pass;
-        };
-
-        // BOTÕES DE SALVAR
-        document.getElementById('b-s').onclick = () => {
-            const id = document.getElementById('e-id').value; 
-            const obj = { nome: document.getElementById('f-n').value, categoria: document.getElementById('f-c').value.toUpperCase(), url: document.getElementById('f-u').value, capa: document.getElementById('f-p').value };
-            if(id) update(ref(db, `conteudo/${id}`), obj).then(()=>{ alert("Conteúdo Atualizado!"); document.getElementById('e-id').value=""; document.getElementById('t-f').innerText="Adicionar/Editar Conteúdo"; });
-            else push(ref(db, 'conteudo'), obj).then(()=>alert("Novo Conteúdo Postado!"));
-        };
-
+        // CRUD CLIENTES COM DATA
         document.getElementById('b-c-u').onclick = () => {
             const id = document.getElementById('edit-user-id').value;
-            const dados = { user: document.getElementById('a-u').value, pass: document.getElementById('a-p').value, status: 'ativo' };
-            if(id) update(ref(db, `usuarios/${id}`), dados).then(() => { alert("Usuário Atualizado!"); document.getElementById('edit-user-id').value = ""; });
-            else push(ref(db, 'usuarios'), dados).then(() => alert("Usuário Criado!"));
+            const user = document.getElementById('a-u').value;
+            const pass = document.getElementById('a-p').value;
+            const diasInput = document.getElementById('a-d').value;
+
+            let expira;
+            if(!diasInput || diasInput == "999") {
+                expira = "Vitalício";
+            } else {
+                expira = new Date().getTime() + (parseInt(diasInput) * 24 * 60 * 60 * 1000);
+            }
+
+            const dados = { user, pass, expira, status: 'ativo' };
+
+            if(id) update(ref(db, `usuarios/${id}`), dados).then(() => { alert("Renovado!"); resetU(); });
+            else push(ref(db, 'usuarios'), dados).then(() => { alert("Criado!"); resetU(); });
         };
 
-        // IMPORTAR M3U (MUITOS DE UMA VEZ)
+        function resetU() { document.getElementById('edit-user-id').value=""; document.getElementById('a-u').value=""; document.getElementById('a-p').value=""; document.getElementById('a-d').value=""; }
+        window.editU = async (k) => { const d = (await get(ref(db, `usuarios/${k}`))).val(); document.getElementById('edit-user-id').value=k; document.getElementById('a-u').value=d.user; document.getElementById('a-p').value=d.pass; window.scrollTo(0,100); };
+        window.delU = (k) => confirm("Excluir?") && remove(ref(db, `usuarios/${k}`));
+        window.st = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
+
+        // CRUD CONTEUDO E IMPORTAÇÃO (MANTIDOS)
+        window.del = (k) => remove(ref(db, `conteudo/${k}`));
+        window.edit = async (k) => { const d = (await get(ref(db, `conteudo/${k}`))).val(); document.getElementById('e-id').value=k; document.getElementById('f-n').value=d.nome; document.getElementById('f-c').value=d.categoria; document.getElementById('f-u').value=d.url; document.getElementById('f-p').value=d.capa; window.scrollTo(0,400); };
+        document.getElementById('b-s').onclick = () => {
+            const id = document.getElementById('e-id').value; const obj = { nome: document.getElementById('f-n').value, categoria: document.getElementById('f-c').value.toUpperCase(), url: document.getElementById('f-u').value, capa: document.getElementById('f-p').value };
+            if(id) update(ref(db, `conteudo/${id}`), obj).then(()=> { alert("Salvo!"); document.getElementById('e-id').value=""; });
+            else push(ref(db, 'conteudo'), obj).then(()=>alert("Postado!"));
+        };
+
         document.getElementById('btn-imp').onclick = async () => {
             const linhas = document.getElementById('m3u-i').value.split('\n'); let t = 0;
             for(let i=0; i<linhas.length; i++){
                 if(linhas[i].includes('#EXTINF')){
                     const info = linhas[i]; const url = linhas[i+1]?.trim();
                     if(url && url.startsWith('http')){
-                        const n = info.split(',')[1] || "Sem Nome"; 
-                        const c = info.includes('group-title="') ? info.split('group-title="')[1].split('"')[0] : "GERAL"; 
-                        const p = info.includes('tvg-logo="') ? info.split('tvg-logo="')[1].split('"')[0] : "";
+                        const n = info.split(',')[1] || "S/N"; const c = info.includes('group-title="') ? info.split('group-title="')[1].split('"')[0] : "GERAL"; const p = info.includes('tvg-logo="') ? info.split('tvg-logo="')[1].split('"')[0] : "";
                         await push(ref(db, 'conteudo'), { nome: n.trim(), categoria: c.toUpperCase(), url: url, capa: p }); t++;
                     }
                 }
             }
-            alert(t + " Itens importados com sucesso!"); document.getElementById('m3u-i').value="";
+            alert(t + " Importados!"); document.getElementById('m3u-i').value="";
         };
 
         document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };

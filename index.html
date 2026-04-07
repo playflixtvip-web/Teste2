@@ -3,48 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CLONEFLIX PRO - PAINEL TOTAL</title>
+    <title>CLONEFLIX VIP - PAINEL ADM</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; --green: #28a745; --gold: #ffc107; }
-        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; --gray: #333; }
+        body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
         
         /* LOGIN */
         #login-container { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .login-box { background: rgba(0,0,0,0.9); padding: 40px; border-radius: 8px; width: 90%; max-width: 380px; text-align: center; border: 1px solid #333; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: none; background: #333; color: #fff; box-sizing: border-box; }
-        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-
-        /* APP PRINCIPAL */
-        header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.8); display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; }
-        #main-content { display: none; padding-top: 0; }
+        .login-box { background: rgba(0,0,0,0.9); padding: 30px; border-radius: 8px; width: 85%; max-width: 350px; text-align: center; border: 1px solid var(--gray); }
+        
+        /* CABEÇALHO */
+        header { position: fixed; top: 0; width: 100%; height: 60px; background: #000; display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid var(--gray); }
+        
+        /* PADRÃO DE BOTÕES E INPUTS */
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: none; background: var(--gray); color: #fff; box-sizing: border-box; font-size: 16px; }
+        .btn-red { width: 100%; padding: 14px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; text-transform: uppercase; }
+        
+        /* ÁREA DO APP */
+        #main-content { display: none; padding-top: 60px; }
         #player-area { width: 100%; background: #000; aspect-ratio: 16/9; }
         video { width: 100%; height: 100%; }
 
-        /* CATEGORIAS ESTILO NETFLIX */
-        .row { padding: 20px 4%; }
-        .row-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #e5e5e5; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
-        .card { background: var(--card); border-radius: 4px; overflow: hidden; cursor: pointer; transition: 0.3s; }
-        .card:hover { transform: scale(1.05); }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
-        .card-info { padding: 8px; font-size: 12px; text-align: center; }
+        /* PAINEL ADMINISTRATIVO */
+        #admin-panel { display: none; padding: 80px 15px 30px; background: #000; min-height: 100vh; }
+        .admin-box { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--gray); }
+        h3 { margin-top: 0; color: var(--red); border-bottom: 1px solid var(--gray); padding-bottom: 10px; font-size: 18px; }
 
-        /* PAINEL ADM */
-        #admin-panel { display: none; padding: 80px 5%; background: #111; min-height: 100vh; }
-        .admin-box { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
-        .btn-sm { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; color: white; font-size: 11px; margin-right: 5px; }
-        .status-ativo { color: var(--green); }
-        .status-suspenso { color: var(--gold); }
+        /* TABELAS */
+        .tabela-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th { text-align: left; color: #999; padding: 10px; border-bottom: 1px solid var(--gray); }
+        td { padding: 12px 10px; border-bottom: 1px solid #222; }
+        .btn-acao { padding: 6px 10px; border-radius: 4px; border: none; color: white; font-size: 11px; font-weight: bold; margin-right: 5px; }
+
+        /* CATEGORIAS APP */
+        .row { padding: 20px; }
+        .row-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+        .card { background: var(--card); border-radius: 4px; overflow: hidden; position: relative; }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
     </style>
 </head>
 <body>
 
     <div id="login-container">
         <div class="login-box">
-            <h1 style="color:var(--red)">CLONEFLIX</h1>
+            <h1 style="color:var(--red); margin-bottom:20px">CLONEFLIX</h1>
             <input type="text" id="user-login" placeholder="Usuário">
             <input type="password" id="pass-login" placeholder="Senha">
             <button class="btn-red" id="btn-entrar">ENTRAR</button>
@@ -53,48 +58,50 @@
 
     <div id="main-content">
         <header>
-            <h1 style="color:var(--red); font-size: 22px;">CLONEFLIX</h1>
-            <button id="btn-adm-view" class="btn-red" style="display:none; width:auto; padding: 5px 15px; background:#444">PAINEL ADM</button>
+            <h2 style="color:var(--red); margin:0">CLONEFLIX</h2>
+            <button id="btn-abrir-adm" class="btn-red" style="display:none; width:auto; padding: 5px 15px; font-size:12px">PAINEL ADM</button>
         </header>
         <div id="player-area"><video id="main-video" controls autoplay playsinline></video></div>
-        <div id="categorias-container"></div>
+        <div id="vitrine-categorias"></div>
     </div>
 
     <div id="admin-panel">
-        <button class="btn-red" id="btn-close-admin" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
-        
+        <button class="btn-red" id="btn-voltar-app" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
+
         <div class="admin-box">
-            <h3>Gerenciar Acessos (Clientes)</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <h3>Gerenciar Clientes</h3>
+            <div style="display:flex; gap:10px; margin-bottom:15px">
                 <input type="text" id="adm-u" placeholder="Nome" style="margin:0">
                 <input type="text" id="adm-p" placeholder="Senha" style="margin:0">
-                <button class="btn-red" id="btn-save-user" style="margin:0; width:150px">CRIAR</button>
+                <button class="btn-red" id="btn-criar-user" style="width:100px; margin:0">CRIAR</button>
             </div>
-            <table>
-                <thead><tr><th>Usuário</th><th>Status</th><th>Ações</th></tr></thead>
-                <tbody id="lista-usuarios-corpo"></tbody>
-            </table>
+            <div class="tabela-container">
+                <table>
+                    <thead><tr><th>USUÁRIO</th><th>STATUS</th><th>AÇÕES</th></tr></thead>
+                    <tbody id="lista-clientes-adm"></tbody>
+                </table>
+            </div>
         </div>
 
         <div class="admin-box">
-            <h3 id="titulo-form-filme">Postar Novo Filme/Canal</h3>
-            <input type="hidden" id="edit-key">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="text" id="f-nome" placeholder="Título">
-                <input type="text" id="f-cat" placeholder="Categoria (Ex: FILMES, TV)">
-                <input type="text" id="f-url" placeholder="Link .m3u8">
-                <input type="text" id="f-capa" placeholder="Link da Capa">
-            </div>
-            <button class="btn-red" id="btn-save-content">PUBLICAR / SALVAR EDIÇÃO</button>
-            <button id="btn-cancela-edit" class="btn-red" style="display:none; background:#555; margin-top:5px">CANCELAR EDIÇÃO</button>
+            <h3 id="txt-form-filme">Adicionar Conteúdo</h3>
+            <input type="hidden" id="edit-id">
+            <input type="text" id="f-nome" placeholder="Nome do Filme/Canal">
+            <input type="text" id="f-cat" placeholder="Categoria (Ex: FILMES, IPTV)">
+            <input type="text" id="f-url" placeholder="Link .m3u8">
+            <input type="text" id="f-capa" placeholder="Link da Capa (Imagem)">
+            <button class="btn-red" id="btn-salvar-filme">PUBLICAR CONTEÚDO</button>
+            <button id="btn-cancelar-edit" class="btn-red" style="display:none; background:#555; margin-top:10px">CANCELAR EDIÇÃO</button>
         </div>
 
         <div class="admin-box">
-            <h3>Lista de Conteúdos (Editar/Excluir)</h3>
-            <table>
-                <thead><tr><th>Título</th><th>Categoria</th><th>Ações</th></tr></thead>
-                <tbody id="lista-conteudo-corpo"></tbody>
-            </table>
+            <h3>Meus Conteúdos</h3>
+            <div class="tabela-container">
+                <table>
+                    <thead><tr><th>TÍTULO</th><th>CATEGORIA</th><th>AÇÕES</th></tr></thead>
+                    <tbody id="lista-filmes-adm"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -119,149 +126,123 @@
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('user-login').value;
             const p = document.getElementById('pass-login').value;
-
-            if (u === "Rhuan" && p === "2026") { entrarApp(true); return; }
-
+            if (u === "Rhuan" && p === "2026") { mostrarApp(true); return; }
             const snap = await get(ref(db, 'usuarios'));
-            let autorizado = false;
+            let ok = false;
             snap.forEach(c => {
                 const d = c.val();
                 if(d.user === u && d.pass === p) {
-                    if(d.status === "suspenso") { alert("Conta suspensa!"); return; }
-                    autorizado = true;
+                    if(d.status === "suspenso") { alert("Acesso suspenso!"); return; }
+                    ok = true;
                 }
             });
-            if(autorizado) entrarApp(false);
-            else alert("Usuário ou senha incorretos!");
+            if(ok) mostrarApp(false); else alert("Login inválido!");
         };
 
-        function entrarApp(isAdmin) {
+        function mostrarApp(adm) {
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
-            if(isAdmin) {
-                document.getElementById('btn-adm-view').style.display = 'block';
-                monitorarUsuarios();
-                monitorarConteudo();
+            if(adm) {
+                document.getElementById('btn-abrir-adm').style.display = 'block';
+                carregarListasAdm();
             }
-            carregarFilmesApp();
+            carregarVitrine();
         }
 
-        // CARREGAR FILMES NO APP (CLIENTE)
-        function carregarFilmesApp() {
+        // VITRINE CLIENTE
+        function carregarVitrine() {
             onValue(ref(db, 'conteudo'), (snap) => {
-                const container = document.getElementById('categorias-container');
-                container.innerHTML = "";
-                let cats = {};
-                snap.forEach(item => {
-                    const f = item.val();
-                    const c = (f.categoria || "GERAL").toUpperCase();
-                    if(!cats[c]) cats[c] = [];
-                    cats[c].push(f);
+                const vitrine = document.getElementById('vitrine-categorias');
+                vitrine.innerHTML = "";
+                let grupos = {};
+                snap.forEach(i => {
+                    const f = i.val(); const c = (f.categoria || "GERAL").toUpperCase();
+                    if(!grupos[c]) grupos[c] = []; grupos[c].push(f);
                 });
-
-                Object.keys(cats).forEach(titulo => {
-                    const row = document.createElement('div');
-                    row.className = 'row';
-                    row.innerHTML = `<div class="row-title">${titulo}</div><div class="grid" id="g-${titulo}"></div>`;
-                    container.appendChild(row);
-                    cats[titulo].forEach(filme => {
-                        const card = document.createElement('div');
-                        card.className = 'card';
-                        card.innerHTML = `<img src="${filme.capa}"><div class="card-info">${filme.nome}</div>`;
+                Object.keys(grupos).forEach(cat => {
+                    const div = document.createElement('div'); div.className = 'row';
+                    div.innerHTML = `<div class="row-title">${cat}</div><div class="grid" id="grid-${cat}"></div>`;
+                    vitrine.appendChild(div);
+                    grupos[cat].forEach(filme => {
+                        const card = document.createElement('div'); card.className = 'card';
+                        card.innerHTML = `<img src="${filme.capa}">`;
                         card.onclick = () => {
                             const v = document.getElementById('main-video');
-                            if(Hls.isSupported()){
-                                const hls = new Hls(); hls.loadSource(filme.url); hls.attachMedia(v);
-                                hls.on(Hls.Events.MANIFEST_PARSED, () => v.play());
-                            }
+                            if(Hls.isSupported()){ const hls = new Hls(); hls.loadSource(filme.url); hls.attachMedia(v); hls.on(Hls.Events.MANIFEST_PARSED, ()=>v.play()); }
                             window.scrollTo(0,0);
                         };
-                        document.getElementById(`g-${titulo}`).appendChild(card);
+                        document.getElementById(`grid-${cat}`).appendChild(card);
                     });
                 });
             });
         }
 
-        // --- FUNÇÕES ADMIN (USUÁRIOS) ---
-        function monitorarUsuarios() {
+        // ADMINISTRAÇÃO
+        function carregarListasAdm() {
             onValue(ref(db, 'usuarios'), (snap) => {
-                const lista = document.getElementById('lista-usuarios-corpo');
-                lista.innerHTML = "";
-                snap.forEach(child => {
-                    const k = child.key; const v = child.val();
+                const lista = document.getElementById('lista-clientes-adm'); lista.innerHTML = "";
+                snap.forEach(c => {
+                    const k = c.key; const v = c.val();
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${v.user}</td><td class="status-${v.status}">${v.status}</td>
-                        <td><button class="btn-sm" style="background:#007bff" id="st-${k}">Status</button>
-                        <button class="btn-sm" style="background:red" id="delu-${k}">X</button></td>`;
+                    tr.innerHTML = `<td>${v.user}</td><td style="color:${v.status=='ativo'?'#28a745':'#ffc107'}">${v.status}</td>
+                        <td><button class="btn-acao" style="background:#444" onclick="window.altStatus('${k}','${v.status}')">STATUS</button>
+                        <button class="btn-acao" style="background:#E50914" onclick="window.delUser('${k}')">X</button></td>`;
                     lista.appendChild(tr);
-                    document.getElementById(`st-${k}`).onclick = () => update(ref(db, `usuarios/${k}`), {status: v.status === 'ativo'?'suspenso':'ativo'});
-                    document.getElementById(`delu-${k}`).onclick = () => confirm("Excluir?") && remove(ref(db, `usuarios/${k}`));
                 });
             });
-        }
-        document.getElementById('btn-save-user').onclick = () => {
-            const user = document.getElementById('adm-u').value;
-            const pass = document.getElementById('adm-p').value;
-            if(user && pass) push(ref(db, 'usuarios'), {user, pass, status: 'ativo'}).then(()=>alert("Criado!"));
-        };
 
-        // --- FUNÇÕES ADMIN (CONTEÚDO / EDIÇÃO) ---
-        function monitorarConteudo() {
             onValue(ref(db, 'conteudo'), (snap) => {
-                const lista = document.getElementById('lista-conteudo-corpo');
-                lista.innerHTML = "";
-                snap.forEach(child => {
-                    const k = child.key; const v = child.val();
+                const lista = document.getElementById('lista-filmes-adm'); lista.innerHTML = "";
+                snap.forEach(c => {
+                    const k = c.key; const v = c.val();
                     const tr = document.createElement('tr');
                     tr.innerHTML = `<td>${v.nome}</td><td>${v.categoria}</td>
-                        <td><button class="btn-sm" style="background:#007bff" id="ed-${k}">Editar</button>
-                        <button class="btn-sm" style="background:red" id="delc-${k}">X</button></td>`;
+                        <td><button class="btn-acao" style="background:#007bff" onclick="window.editarFilme('${k}')">EDITAR</button>
+                        <button class="btn-acao" style="background:#E50914" onclick="window.delFilme('${k}')">X</button></td>`;
                     lista.appendChild(tr);
-                    document.getElementById(`ed-${k}`).onclick = () => carregarEdicao(k, v);
-                    document.getElementById(`delc-${k}`).onclick = () => confirm("Excluir?") && remove(ref(db, `conteudo/${k}`));
                 });
             });
         }
 
-        function carregarEdicao(key, data) {
-            document.getElementById('edit-key').value = key;
-            document.getElementById('f-nome').value = data.nome;
-            document.getElementById('f-cat').value = data.categoria;
-            document.getElementById('f-url').value = data.url;
-            document.getElementById('f-capa').value = data.capa;
-            document.getElementById('titulo-form-filme').innerText = "Editando: " + data.nome;
-            document.getElementById('btn-cancela-edit').style.display = "block";
+        // AÇÕES GLOBAIS
+        window.altStatus = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
+        window.delUser = (k) => confirm("Excluir cliente?") && remove(ref(db, `usuarios/${k}`));
+        window.delFilme = (k) => confirm("Excluir conteúdo?") && remove(ref(db, `conteudo/${k}`));
+        
+        window.editarFilme = async (k) => {
+            const d = (await get(ref(db, `conteudo/${k}`))).val();
+            document.getElementById('edit-id').value = k;
+            document.getElementById('f-nome').value = d.nome;
+            document.getElementById('f-cat').value = d.categoria;
+            document.getElementById('f-url').value = d.url;
+            document.getElementById('f-capa').value = d.capa;
+            document.getElementById('txt-form-filme').innerText = "Editando Conteúdo";
+            document.getElementById('btn-cancelar-edit').style.display = "block";
             window.scrollTo(0,0);
-        }
-
-        document.getElementById('btn-save-content').onclick = () => {
-            const key = document.getElementById('edit-key').value;
-            const dados = {
-                nome: document.getElementById('f-nome').value,
-                categoria: document.getElementById('f-cat').value,
-                url: document.getElementById('f-url').value,
-                capa: document.getElementById('f-capa').value
-            };
-            if(key) {
-                update(ref(db, `conteudo/${key}`), dados).then(() => { alert("Atualizado!"); limparForm(); });
-            } else {
-                push(ref(db, 'conteudo'), dados).then(() => { alert("Postado!"); limparForm(); });
-            }
         };
 
-        function limparForm() {
-            document.getElementById('edit-key').value = "";
-            document.getElementById('f-nome').value = "";
-            document.getElementById('f-cat').value = "";
-            document.getElementById('f-url').value = "";
-            document.getElementById('f-capa').value = "";
-            document.getElementById('titulo-form-filme').innerText = "Postar Novo Filme/Canal";
-            document.getElementById('btn-cancela-edit').style.display = "none";
+        document.getElementById('btn-criar-user').onclick = () => {
+            const u = document.getElementById('adm-u').value; const p = document.getElementById('adm-p').value;
+            if(u && p) push(ref(db, 'usuarios'), {user:u, pass:p, status:'ativo'}).then(()=>alert("Criado!"));
+        };
+
+        document.getElementById('btn-salvar-filme').onclick = () => {
+            const id = document.getElementById('edit-id').value;
+            const dados = { nome: document.getElementById('f-nome').value, categoria: document.getElementById('f-cat').value, url: document.getElementById('f-url').value, capa: document.getElementById('f-capa').value };
+            if(id) update(ref(db, `conteudo/${id}`), dados).then(()=> { alert("Atualizado!"); resetForm(); });
+            else push(ref(db, 'conteudo'), dados).then(()=> { alert("Publicado!"); resetForm(); });
+        };
+
+        function resetForm() {
+            document.getElementById('edit-id').value = ""; document.getElementById('f-nome').value = ""; document.getElementById('f-cat').value = "";
+            document.getElementById('f-url').value = ""; document.getElementById('f-capa').value = "";
+            document.getElementById('txt-form-filme').innerText = "Adicionar Conteúdo";
+            document.getElementById('btn-cancelar-edit').style.display = "none";
         }
 
-        document.getElementById('btn-cancela-edit').onclick = limparForm;
-        document.getElementById('btn-adm-view').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
-        document.getElementById('btn-close-admin').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
+        document.getElementById('btn-cancelar-edit').onclick = resetForm;
+        document.getElementById('btn-abrir-adm').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
+        document.getElementById('btn-voltar-app').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
     </script>
 </body>
 </html>

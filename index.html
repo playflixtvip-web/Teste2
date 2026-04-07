@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CLONEFLIX PRO</title>
+    <title>CLONEFLIX - GERENCIADOR PRO</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; }
+        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; --green: #28a745; --gray: #555; }
         body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; }
         
         /* LOGIN */
@@ -15,18 +15,19 @@
         input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 4px; border: none; background: #333; color: #fff; box-sizing: border-box; }
         .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        /* HEADER E APP */
+        /* HEADER */
         header { position: fixed; top: 0; width: 100%; height: 60px; background: #000; display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid #333; }
-        #player-area { width: 100%; background: #000; margin-top: 60px; aspect-ratio: 16/9; }
-        video { width: 100%; height: 100%; display: block; }
-        .container { padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
-        .card { background: var(--card); border-radius: 6px; overflow: hidden; cursor: pointer; text-align: center; border: 1px solid #333; padding-bottom: 5px;}
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-
-        /* PAINEL ADM */
-        #admin-panel { display: none; padding: 80px 20px; min-height: 100vh; background: #111; }
-        .admin-section { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #333; }
+        
+        /* TABELA DE USUÁRIOS */
+        .admin-section { background: #1c1c1c; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
+        .status-ativo { color: var(--green); font-weight: bold; }
+        .status-suspenso { color: var(--red); font-weight: bold; }
+        .btn-action { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 12px; color: white; }
+        
+        #admin-panel { display: none; padding: 80px 15px; background: #111; min-height: 100vh; }
+        #main-app { display: none; padding-top: 70px; }
     </style>
 </head>
 <body>
@@ -40,41 +41,43 @@
         </div>
     </div>
 
-    <div id="main-app" style="display:none">
+    <div id="main-app">
         <header>
-            <h1 style="color:var(--red); font-size: 20px;">CLONEFLIX</h1>
-            <button id="btn-adm-view" class="btn-red" style="display:none; width:auto; padding: 5px 15px; background:#444">PAINEL ADM</button>
+            <h1 style="color:var(--red); font-size: 18px;">CLONEFLIX</h1>
+            <button id="btn-adm-view" class="btn-red" style="display:none; width:auto; padding: 5px 15px; background:#444">GERENCIAR</button>
         </header>
-        <div id="player-area"><video id="main-video" controls autoplay playsinline></video></div>
-        <div class="container">
-            <h3 id="titulo-dinamico" style="color:var(--red)">Início</h3>
-            <div id="grid-home" class="grid"></div>
-        </div>
+        <div id="player-area" style="width:100%; aspect-ratio:16/9; background:#000;"><video id="main-video" controls style="width:100%; height:100%;"></video></div>
+        <div id="grid-home" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:10px; padding:20px;"></div>
     </div>
 
     <div id="admin-panel">
         <button class="btn-red" id="btn-close-admin" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
         
         <div class="admin-section">
-            <h3>Criar Novo Acesso</h3>
-            <input type="text" id="adm-u" placeholder="Nome do Cliente">
+            <h3>Cadastrar Novo Cliente</h3>
+            <input type="text" id="adm-u" placeholder="Nome">
             <input type="text" id="adm-p" placeholder="Senha">
-            <button class="btn-red" id="btn-save-user">SALVAR NO FIREBASE</button>
+            <button class="btn-red" id="btn-save-user">CRIAR ACESSO</button>
         </div>
 
         <div class="admin-section">
-            <h3>Postar Conteúdo (M3U8)</h3>
-            <input type="text" id="f-nome" placeholder="Nome do Filme">
-            <input type="text" id="f-cat" placeholder="Categoria">
-            <input type="text" id="f-url" placeholder="Link .m3u8">
-            <input type="text" id="f-capa" placeholder="Link da Capa">
-            <button class="btn-red" id="btn-save-content">PUBLICAR AGORA</button>
+            <h3>Lista de Clientes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-usuarios"></tbody>
+            </table>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo",
@@ -89,74 +92,78 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // AÇÃO DE LOGIN
+        // LOGIN COM VERIFICAÇÃO DE STATUS
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('user-login').value;
             const p = document.getElementById('pass-login').value;
 
-            // Se for você (Dono)
-            if (u === "Rhuan" && p === "2026") {
-                abrirApp(true);
-                return;
-            }
+            if (u === "Rhuan" && p === "2026") { abrirApp(true); return; }
 
-            // Busca no Firebase se o usuário existe
             const snapshot = await get(ref(db, 'usuarios'));
-            let autorizado = false;
+            let userFound = null;
             snapshot.forEach(child => {
-                if(child.val().user === u && child.val().pass === p) autorizado = true;
+                const data = child.val();
+                if(data.user === u && data.pass === p) userFound = data;
             });
 
-            if(autorizado) abrirApp(false);
-            else alert("Acesso negado! Usuário ou senha incorretos.");
+            if(userFound) {
+                if(userFound.status === "suspenso") alert("Sua conta está suspensa! Entre em contato com o administrador.");
+                else abrirApp(false);
+            } else {
+                alert("Usuário ou senha incorretos.");
+            }
         };
 
         function abrirApp(isAdmin) {
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
-            if(isAdmin) document.getElementById('btn-adm-view').style.display = 'block';
-            carregarFilmes();
+            if(isAdmin) {
+                document.getElementById('btn-adm-view').style.display = 'block';
+                carregarGerenciador();
+            }
         }
 
-        // CARREGAR FILMES DO BANCO
-        function carregarFilmes() {
-            onValue(ref(db, 'conteudo'), (snap) => {
-                const grid = document.getElementById('grid-home');
-                grid.innerHTML = "";
-                snap.forEach(item => {
-                    const f = item.val();
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `<img src="${f.capa}"><br><small>${f.nome}</small>`;
-                    card.onclick = () => {
-                        const v = document.getElementById('main-video');
-                        if(Hls.isSupported()){
-                            const hls = new Hls(); hls.loadSource(f.url); hls.attachMedia(v);
-                            hls.on(Hls.Events.MANIFEST_PARSED, () => v.play());
-                        }
-                    };
-                    grid.appendChild(card);
-                });
-            });
-        }
-
-        // FUNÇÕES DO PAINEL ADM
+        // SALVAR NOVO USUÁRIO COM STATUS ATIVO
         document.getElementById('btn-save-user').onclick = () => {
             const user = document.getElementById('adm-u').value;
             const pass = document.getElementById('adm-p').value;
             if(user && pass) {
-                push(ref(db, 'usuarios'), { user, pass }).then(() => alert("Usuário salvo!"));
+                push(ref(db, 'usuarios'), { user, pass, status: "ativo" }).then(() => alert("Usuário criado!"));
             }
         };
 
-        document.getElementById('btn-save-content').onclick = () => {
-            const data = {
-                nome: document.getElementById('f-nome').value,
-                categoria: document.getElementById('f-cat').value,
-                url: document.getElementById('f-url').value,
-                capa: document.getElementById('f-capa').value
-            };
-            push(ref(db, 'conteudo'), data).then(() => alert("Filme Postado!"));
+        // CARREGAR TABELA DE GERENCIAMENTO
+        function carregarGerenciador() {
+            onValue(ref(db, 'usuarios'), (snap) => {
+                const tbody = document.getElementById('tabela-usuarios');
+                tbody.innerHTML = "";
+                snap.forEach(child => {
+                    const key = child.key;
+                    const val = child.val();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${val.user}</td>
+                        <td class="${val.status === 'ativo' ? 'status-ativo' : 'status-suspenso'}">${val.status.toUpperCase()}</td>
+                        <td>
+                            <button class="btn-action" style="background:#007bff" onclick="window.mudarStatus('${key}', '${val.status}')">Alternar</button>
+                            <button class="btn-action" style="background:red" onclick="window.deletarUsuario('${key}')">Excluir</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        // FUNÇÕES GLOBAIS DE AÇÃO
+        window.mudarStatus = (key, statusAtual) => {
+            const novoStatus = statusAtual === "ativo" ? "suspenso" : "ativo";
+            update(ref(db, `usuarios/${key}`), { status: novoStatus });
+        };
+
+        window.deletarUsuario = (key) => {
+            if(confirm("Tem certeza que deseja excluir este cliente?")) {
+                remove(ref(db, `usuarios/${key}`));
+            }
         };
 
         document.getElementById('btn-adm-view').onclick = () => {

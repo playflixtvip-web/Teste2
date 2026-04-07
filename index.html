@@ -3,194 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CLONEFLIX VIP - GERENCIADOR</title>
+    <title>CLONEFLIX VIP - PAINEL TOTAL</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root { --bg: #000; --red: #E50914; --card: #141414; --text: #fff; --gray: #333; }
         body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        
-        /* CABEÇALHO */
         header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; }
-        
-        /* LOGIN E INPUTS */
-        #login-container { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .login-box { background: #111; padding: 30px; border-radius: 8px; width: 85%; max-width: 350px; text-align: center; border: 1px solid var(--gray); }
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: none; background: var(--gray); color: #fff; box-sizing: border-box; font-size: 14px; }
-        textarea { height: 120px; font-family: monospace; font-size: 10px; }
-        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-
-        /* APP E PLAYER */
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: none; background: var(--gray); color: #fff; box-sizing: border-box; }
+        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
         #main-content { display: none; padding-top: 60px; }
         #player-area { width: 100%; aspect-ratio: 16/9; background: #000; position: sticky; top: 60px; z-index: 900; }
         video { width: 100%; height: 100%; }
-
-        /* VITRINE (IMAGENS PEQUENAS E AGRUPADAS) */
         .row { padding: 15px 20px; }
-        .row-title { font-size: 15px; font-weight: bold; margin-bottom: 10px; color: #aaa; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
         .card { background: var(--card); border-radius: 4px; overflow: hidden; cursor: pointer; }
-        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
-        .card-name { padding: 5px; font-size: 9px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* PAINEL ADM */
-        #admin-panel { display: none; padding: 80px 15px 40px; background: #0a0a0a; min-height: 100vh; }
+        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+        #admin-panel { display: none; padding: 80px 15px; background: #0a0a0a; min-height: 100vh; }
         .admin-box { background: #111; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #222; }
-        h3 { color: var(--red); margin-top: 0; font-size: 16px; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        td { padding: 8px; border-bottom: 1px solid #222; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
+        .btn-acao { padding: 5px 8px; border-radius: 3px; border: none; color: #fff; cursor: pointer; margin-right: 3px; font-size: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="login-container">
-        <div class="login-box">
+    <div id="login-container" style="position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; z-index:9999;">
+        <div class="login-box" style="text-align:center; background:#111; padding:30px; border-radius:8px; border:1px solid #333; width:80%;">
             <h1 style="color:var(--red)">CLONEFLIX</h1>
-            <input type="text" id="user-login" placeholder="Usuário">
-            <input type="password" id="pass-login" placeholder="Senha">
-            <button class="btn-red" id="btn-entrar">ENTRAR</button>
+            <input type="text" id="u-l" placeholder="Usuário"><input type="password" id="p-l" placeholder="Senha">
+            <button class="btn-red" id="b-e">ENTRAR</button>
         </div>
     </div>
 
     <div id="main-content">
-        <header>
-            <h2 style="color:var(--red); margin:0; font-size: 20px;">CLONEFLIX</h2>
-            <button id="btn-adm" class="btn-red" style="display:none; width:auto; padding: 5px 10px; font-size:10px">GERENCIAR</button>
-        </header>
+        <header><h2 style="color:var(--red); margin:0;">CLONEFLIX</h2><button id="b-a" class="btn-red" style="display:none; width:auto; padding:5px 10px;">GERENCIAR</button></header>
         <div id="player-area"><video id="main-video" controls autoplay playsinline></video></div>
         <div id="vitrine"></div>
     </div>
 
     <div id="admin-panel">
-        <button class="btn-red" id="btn-voltar" style="width:auto; margin-bottom:20px">← VOLTAR</button>
+        <button class="btn-red" id="b-v" style="width:auto; margin-bottom:20px">← VOLTAR</button>
 
         <div class="admin-box">
             <h3>Importar Lista (Texto M3U)</h3>
-            <textarea id="m3u-input" placeholder="Cole aqui seu texto começando com #EXTINF..."></textarea>
-            <button class="btn-red" id="btn-importar" style="background: #28a745;">IMPORTAR TUDO AGORA</button>
+            <textarea id="m3u-i" placeholder="Cole o texto #EXTINF aqui..."></textarea>
+            <button class="btn-red" id="btn-imp" style="background:#28a745">IMPORTAR TUDO</button>
         </div>
 
         <div class="admin-box">
-            <h3>Gerenciar Conteúdo Individual</h3>
-            <input type="text" id="f-nome" placeholder="Nome">
-            <input type="text" id="f-cat" placeholder="Categoria">
-            <input type="text" id="f-url" placeholder="Link .m3u8">
-            <input type="text" id="f-capa" placeholder="Link da Capa">
-            <button class="btn-red" id="btn-save">SALVAR ÚNICO</button>
+            <h3 id="t-f">Postar/Editar Conteúdo</h3>
+            <input type="hidden" id="e-id">
+            <input type="text" id="f-n" placeholder="Nome">
+            <input type="text" id="f-c" placeholder="Categoria">
+            <input type="text" id="f-u" placeholder="Link .m3u8">
+            <input type="text" id="f-p" placeholder="Link da Capa">
+            <button class="btn-red" id="b-s">SALVAR CONTEÚDO</button>
         </div>
 
         <div class="admin-box">
-            <h3>Canais Cadastrados</h3>
-            <div style="max-height: 200px; overflow-y: auto;">
-                <table id="lista-adm"></table>
-            </div>
+            <h3>Gerenciar Clientes</h3>
+            <div style="display:flex; gap:5px;"><input id="a-u" placeholder="Usuário"><input id="a-p" placeholder="Senha"><button id="b-c-u" class="btn-red" style="width:80px">ADD</button></div>
+            <table><thead><tr><th>USER</th><th>SENHA</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="l-u"></tbody></table>
+        </div>
+
+        <div class="admin-box">
+            <h3>Meus Conteúdos</h3>
+            <table><thead><tr><th>TÍTULO</th><th>CAT</th><th>AÇÕES</th></tr></thead><tbody id="l-c"></tbody></table>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo",
-            databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
+        const app = initializeApp(firebaseConfig); const db = getDatabase(app);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        document.getElementById('b-e').onclick = () => { if(document.getElementById('u-l').value==="Rhuan" && document.getElementById('p-l').value==="2026"){ document.getElementById('login-container').style.display='none'; document.getElementById('main-content').style.display='block'; document.getElementById('b-a').style.display='block'; carregar(); } };
 
-        document.getElementById('btn-entrar').onclick = async () => {
-            const u = document.getElementById('user-login').value;
-            const p = document.getElementById('pass-login').value;
-            if(u === "Rhuan" && p === "2026") { login(true); }
-            else { alert("Acesso restrito ao administrador!"); }
-        };
-
-        function login(adm) {
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            if(adm) document.getElementById('btn-adm').style.display = 'block';
-            carregarVitrine();
-            carregarAdm();
-        }
-
-        // FUNÇÃO DE IMPORTAR POR ESCRITO (MUITOS DE UMA VEZ)
-        document.getElementById('btn-importar').onclick = async () => {
-            const texto = document.getElementById('m3u-input').value;
-            const linhas = texto.split('\n');
-            let total = 0;
-
-            for(let i=0; i < linhas.length; i++) {
-                if(linhas[i].includes('#EXTINF')) {
-                    const info = linhas[i];
-                    const url = linhas[i+1]?.trim();
-                    if(url && url.startsWith('http')) {
-                        const nome = info.split(',')[1] || "Sem Nome";
-                        const cat = info.includes('group-title="') ? info.split('group-title="')[1].split('"')[0] : "GERAL";
-                        const capa = info.includes('tvg-logo="') ? info.split('tvg-logo="')[1].split('"')[0] : "";
-                        
-                        await push(ref(db, 'conteudo'), {
-                            nome: nome.trim(),
-                            categoria: cat.toUpperCase(),
-                            url: url,
-                            capa: capa
-                        });
-                        total++;
-                    }
-                }
-            }
-            alert(total + " itens importados!");
-            document.getElementById('m3u-input').value = "";
-        };
-
-        function carregarVitrine() {
-            onValue(ref(db, 'conteudo'), (snap) => {
-                const v = document.getElementById('vitrine'); v.innerHTML = "";
-                let cats = {};
-                snap.forEach(i => {
-                    const d = i.val(); const c = d.categoria || "GERAL";
-                    if(!cats[c]) cats[c] = []; cats[c].push(d);
+        function carregar() {
+            onValue(ref(db, 'conteudo'), (s) => {
+                const v = document.getElementById('vitrine'); v.innerHTML = ""; let cats = {};
+                const lc = document.getElementById('l-c'); lc.innerHTML = "";
+                s.forEach(i => {
+                    const d = i.val(); const k = i.key;
+                    if(!cats[d.categoria]) cats[d.categoria] = []; cats[d.categoria].push(d);
+                    lc.innerHTML += `<tr><td>${d.nome}</td><td>${d.categoria}</td><td><button class="btn-acao" style="background:#007bff" onclick="window.edit('${k}')">EDIT</button><button class="btn-acao" style="background:red" onclick="window.del('${k}')">X</button></td></tr>`;
                 });
-                for(let c in cats) {
-                    const row = document.createElement('div'); row.className = 'row';
-                    row.innerHTML = `<div class="row-title">${c}</div><div class="grid" id="g-${c}"></div>`;
-                    v.appendChild(row);
+                for(let c in cats){
+                    const r = document.createElement('div'); r.className='row'; r.innerHTML=`<b>${c}</b><div class="grid" id="g-${c}"></div>`; v.appendChild(r);
                     cats[c].forEach(f => {
-                        const card = document.createElement('div'); card.className = 'card';
-                        card.innerHTML = `<img src="${f.capa}"><div class="card-name">${f.nome}</div>`;
-                        card.onclick = () => {
-                            const vid = document.getElementById('main-video');
-                            if(Hls.isSupported()){ const hls = new Hls(); hls.loadSource(f.url); hls.attachMedia(vid); hls.on(Hls.Events.MANIFEST_PARSED, ()=>vid.play()); }
-                        };
+                        const card = document.createElement('div'); card.className='card'; card.innerHTML=`<img src="${f.capa}"><div style="font-size:9px; text-align:center;">${f.nome}</div>`;
+                        card.onclick = () => { if(Hls.isSupported()){ const hls = new Hls(); hls.loadSource(f.url); hls.attachMedia(document.getElementById('main-video')); hls.on(Hls.Events.MANIFEST_PARSED, ()=>document.getElementById('main-video').play()); } };
                         document.getElementById('g-'+c).appendChild(card);
                     });
                 }
             });
-        }
-
-        function carregarAdm() {
-            onValue(ref(db, 'conteudo'), (snap) => {
-                const l = document.getElementById('lista-adm'); l.innerHTML = "";
-                snap.forEach(i => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${i.val().nome}</td><td><button onclick="window.del('${i.key}')" style="background:red; color:white; border:none; padding:5px">X</button></td>`;
-                    l.appendChild(tr);
-                });
+            onValue(ref(db, 'usuarios'), (s) => {
+                const lu = document.getElementById('l-u'); lu.innerHTML = "";
+                s.forEach(i => { const k = i.key; const v = i.val(); lu.innerHTML += `<tr><td>${v.user}</td><td>${v.pass}</td><td style="color:${v.status=='ativo'?'green':'gold'}">${v.status}</td><td><button class="btn-acao" style="background:#444" onclick="window.st('${k}','${v.status}')">ST</button><button class="btn-acao" style="background:red" onclick="window.delU('${k}')">X</button></td></tr>`; });
             });
         }
 
-        window.del = (k) => confirm("Excluir?") && remove(ref(db, `conteudo/${k}`));
-        document.getElementById('btn-save').onclick = () => {
-            push(ref(db, 'conteudo'), {
-                nome: document.getElementById('f-nome').value,
-                categoria: document.getElementById('f-cat').value.toUpperCase(),
-                url: document.getElementById('f-url').value,
-                capa: document.getElementById('f-capa').value
-            });
-            alert("Salvo!");
+        window.del = (k) => remove(ref(db, `conteudo/${k}`));
+        window.delU = (k) => remove(ref(db, `usuarios/${k}`));
+        window.st = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
+        window.edit = async (k) => { const d = (await get(ref(db, `conteudo/${k}`))).val(); document.getElementById('e-id').value=k; document.getElementById('f-n').value=d.nome; document.getElementById('f-c').value=d.categoria; document.getElementById('f-u').value=d.url; document.getElementById('f-p').value=d.capa; document.getElementById('t-f').innerText="Editando: "+d.nome; window.scrollTo(0,0); };
+
+        document.getElementById('b-s').onclick = () => {
+            const id = document.getElementById('e-id').value; const obj = { nome: document.getElementById('f-n').value, categoria: document.getElementById('f-c').value.toUpperCase(), url: document.getElementById('f-u').value, capa: document.getElementById('f-p').value };
+            if(id) update(ref(db, `conteudo/${id}`), obj).then(()=>{ alert("Editado!"); document.getElementById('e-id').value=""; });
+            else push(ref(db, 'conteudo'), obj).then(()=>alert("Postado!"));
         };
 
-        document.getElementById('btn-adm').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
-        document.getElementById('btn-voltar').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
+        document.getElementById('b-c-u').onclick = () => push(ref(db, 'usuarios'), {user: document.getElementById('a-u').value, pass: document.getElementById('a-p').value, status: 'ativo'});
+
+        document.getElementById('btn-imp').onclick = async () => {
+            const linhas = document.getElementById('m3u-i').value.split('\n'); let t = 0;
+            for(let i=0; i<linhas.length; i++){
+                if(linhas[i].includes('#EXTINF')){
+                    const info = linhas[i]; const url = linhas[i+1]?.trim();
+                    if(url && url.startsWith('http')){
+                        const n = info.split(',')[1] || "S/N"; const c = info.includes('group-title="') ? info.split('group-title="')[1].split('"')[0] : "GERAL"; const p = info.includes('tvg-logo="') ? info.split('tvg-logo="')[1].split('"')[0] : "";
+                        await push(ref(db, 'conteudo'), { nome: n.trim(), categoria: c.toUpperCase(), url: url, capa: p }); t++;
+                    }
+                }
+            }
+            alert(t + " Importados!"); document.getElementById('m3u-i').value="";
+        };
+
+        document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
+        document.getElementById('b-v').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
     </script>
 </body>
 </html>

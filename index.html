@@ -2,81 +2,14 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CLONEFLIX PRO - PAINEL ADM</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <style>
-        :root { --bg: #141414; --red: #E50914; --card: #222; --text: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        #login-container { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 5000; }
-        .login-box { background: rgba(20,20,20,0.95); padding: 40px; border-radius: 8px; width: 90%; max-width: 360px; text-align: center; border: 1px solid #333; }
-        input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 4px; border: none; background: #333; color: #fff; box-sizing: border-box; }
-        .btn-red { width: 100%; padding: 12px; background: var(--red); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        header { position: fixed; top: 0; width: 100%; height: 60px; background: #000; display: flex; align-items: center; padding: 0 20px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid #333; }
-        #player-area { width: 100%; background: #000; margin-top: 60px; aspect-ratio: 16/9; }
-        video { width: 100%; height: 100%; display: block; }
-        .container { padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
-        .card { background: var(--card); border-radius: 6px; overflow: hidden; cursor: pointer; text-align: center; padding-bottom: 10px; border: 1px solid #333; }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        #admin-panel { display: none; padding: 80px 20px; min-height: 100vh; background: #111; }
-        .admin-section { background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #333; }
-        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #262626; margin-bottom: 8px; border-radius: 4px; }
-    </style>
-</head>
-<body>
-
-    <div id="login-container">
-        <div class="login-box">
-            <h2 style="color:var(--red)">CLONEFLIX</h2>
-            <input type="text" id="user-login" placeholder="Usuário">
-            <input type="password" id="pass-login" placeholder="Senha">
-            <button class="btn-red" id="btn-entrar">ENTRAR</button>
-        </div>
-    </div>
-
-    <div id="main-app" style="display:none">
-        <header>
-            <h1 style="color:var(--red)">CLONEFLIX</h1>
-            <div style="display:flex; gap:10px;">
-                <button id="btn-adm-view" class="btn-red" style="display:none; width:auto; padding: 5px 10px; background:#444">PAINEL</button>
-                <button id="btn-back" class="btn-red" style="display:none; width:auto; padding: 5px 10px;">VOLTAR</button>
-            </div>
-        </header>
-        <div id="player-area"><video id="main-video" controls autoplay playsinline></video></div>
-        <div class="container">
-            <h3 id="titulo-dinamico" style="color:var(--red)">Categorias</h3>
-            <div id="grid-home" class="grid"></div>
-            <div id="grid-itens" class="grid" style="display:none"></div>
-        </div>
-    </div>
-
-    <div id="admin-panel">
-        <button class="btn-red" id="btn-close-admin" style="width:auto; margin-bottom:20px">← VOLTAR AO APP</button>
-        
-        <div class="admin-section">
-            <h3>Gerar Acesso (Usuário)</h3>
-            <input type="text" id="adm-u" placeholder="Nome do Cliente">
-            <input type="text" id="adm-p" placeholder="Senha">
-            <button class="btn-red" id="btn-save-user">CRIAR AGORA NO CLOUD</button>
-            <div id="lista-usuarios" style="margin-top:15px"></div>
-        </div>
-
-        <div class="admin-section">
-            <h3>Postar Novo Conteúdo</h3>
-            <input type="text" id="f-nome" placeholder="Nome do Filme/Canal">
-            <input type="text" id="f-cat" placeholder="Categoria (Ex: FILMES, TV)">
-            <input type="text" id="f-url" placeholder="Link .m3u8">
-            <input type="text" id="f-capa" placeholder="Link da Imagem (Capa)">
-            <button class="btn-red" id="btn-save-content">PUBLICAR NO SITE</button>
-        </div>
-    </div>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLONEFLIX ADM</title>
     <script type="module">
+        // Importações necessárias para o Firebase v10+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIGURAÇÃO REALTIME DATABASE
+        // Suas chaves exatas das imagens
         const firebaseConfig = {
             apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo",
             authDomain: "cloneflix-16f9c.firebaseapp.com",
@@ -87,124 +20,48 @@
             databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com"
         };
 
+        // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        let dadosGlobais = {};
 
-        // LOGIN
-        document.getElementById('btn-entrar').onclick = async () => {
-            const u = document.getElementById('user-login').value;
-            const p = document.getElementById('pass-login').value;
-
-            if (u === "Rhuan" && p === "2026") {
-                iniciarApp(true);
-                return;
-            }
-
-            const snapshot = await get(ref(db, 'usuarios'));
-            let autorizado = false;
-            snapshot.forEach(child => {
-                if(child.val().user === u && child.val().pass === p) autorizado = true;
-            });
-
-            if(autorizado) iniciarApp(false);
-            else alert("Acesso Inválido ou Usuário não existe!");
-        };
-
-        function iniciarApp(isAdmin) {
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
-            if(isAdmin) document.getElementById('btn-adm-view').style.display = 'block';
-            
-            onValue(ref(db, 'conteudo'), (snap) => {
-                dadosGlobais = {};
-                snap.forEach(item => {
-                    const c = item.val();
-                    const cat = (c.categoria || "GERAL").toUpperCase();
-                    if(!dadosGlobais[cat]) dadosGlobais[cat] = [];
-                    dadosGlobais[cat].push(c);
-                });
-                renderHome();
-            });
-        }
-
-        function renderHome() {
-            const grid = document.getElementById('grid-home');
-            grid.innerHTML = "";
-            document.getElementById('grid-home').style.display = 'grid';
-            document.getElementById('grid-itens').style.display = 'none';
-            document.getElementById('btn-back').style.display = 'none';
-            
-            Object.keys(dadosGlobais).forEach(cat => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.style.padding = '20px';
-                card.innerHTML = `<strong>${cat}</strong><br><small>${dadosGlobais[cat].length} itens</small>`;
-                card.onclick = () => renderCat(cat);
-                grid.appendChild(card);
-            });
-        }
-
-        function renderCat(cat) {
-            const grid = document.getElementById('grid-itens');
-            grid.innerHTML = "";
-            document.getElementById('grid-home').style.display = 'none';
-            document.getElementById('grid-itens').style.display = 'grid';
-            document.getElementById('btn-back').style.display = 'block';
-
-            dadosGlobais[cat].forEach(f => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `<img src="${f.capa}" onerror="this.src='https://via.placeholder.com/150x220?text=Capa'"><br><strong>${f.nome}</strong>`;
-                card.onclick = () => {
-                    const v = document.getElementById('main-video');
-                    if(Hls.isSupported()){
-                        const hls = new Hls(); hls.loadSource(f.url); hls.attachMedia(v);
-                        hls.on(Hls.Events.MANIFEST_PARSED, () => v.play());
-                    }
-                };
-                grid.appendChild(card);
-            });
-        }
-
-        // ADMIN
-        document.getElementById('btn-save-user').onclick = () => {
+        // Função para criar usuário
+        window.criarUsuario = function() {
             const user = document.getElementById('adm-u').value;
             const pass = document.getElementById('adm-p').value;
-            if(user && pass) push(ref(db, 'usuarios'), { user, pass }).then(() => alert("Usuário salvo na nuvem!"));
-        };
 
-        document.getElementById('btn-save-content').onclick = () => {
-            const content = {
-                nome: document.getElementById('f-nome').value,
-                categoria: document.getElementById('f-cat').value,
-                url: document.getElementById('f-url').value,
-                capa: document.getElementById('f-capa').value
-            };
-            if(content.nome && content.url) push(ref(db, 'conteudo'), content).then(() => alert("Conteúdo Postado!"));
-        };
-
-        document.getElementById('btn-adm-view').onclick = () => {
-            document.getElementById('main-app').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'block';
-            onValue(ref(db, 'usuarios'), snap => {
-                const div = document.getElementById('lista-usuarios');
-                div.innerHTML = "";
-                snap.forEach(u => {
-                    const row = document.createElement('div');
-                    row.className = 'user-item';
-                    row.innerHTML = `<span>${u.val().user}</span> <button onclick="window.delU('${u.key}')">X</button>`;
-                    div.appendChild(row);
+            if (user && pass) {
+                // Referência para a pasta 'usuarios' no seu banco
+                const usuariosRef = ref(db, 'usuarios');
+                
+                push(usuariosRef, {
+                    user: user,
+                    pass: pass,
+                    dataCriacao: new Date().toISOString()
+                })
+                .then(() => {
+                    alert("✅ Usuário " + user + " criado com sucesso!");
+                    document.getElementById('adm-u').value = "";
+                    document.getElementById('adm-p').value = "";
+                })
+                .catch((error) => {
+                    console.error(error);
+                    alert("❌ Erro ao salvar: " + error.message);
                 });
-            });
+            } else {
+                alert("Preencha todos os campos!");
+            }
         };
-
-        window.delU = (key) => remove(ref(db, 'usuarios/' + key));
-        document.getElementById('btn-close-admin').onclick = () => {
-            document.getElementById('admin-panel').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
-        };
-        document.getElementById('btn-back').onclick = renderHome;
     </script>
+    <style>
+        body { background: #141414; color: white; font-family: Arial; padding: 20px; text-align: center; }
+        input { width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        button { width: 85%; padding: 12px; background: #E50914; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>PAINEL DE CONTROLE</h2>
+    <input type="text" id="adm-u" placeholder="Nome do Usuário">
+    <input type="text" id="adm-p" placeholder="Senha do Usuário">
+    <button onclick="window.criarUsuario()">CRIAR NO FIREBASE</button>
 </body>
 </html>

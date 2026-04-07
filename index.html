@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PAINEL ADMINISTRATIVO - CLONEFLIX</title>
+    <title>PAINEL COMPLETO - CLONEFLIX</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root { --bg: #000; --red: #E50914; --card: #141414; --text: #fff; --gray: #333; }
@@ -50,18 +50,18 @@
 
         <div class="admin-box">
             <h3>Importar Lista (Texto M3U)</h3>
-            <textarea id="m3u-i" placeholder="Cole o texto #EXTINF aqui para importar muitos canais de uma vez..."></textarea>
-            <button class="btn-red" id="btn-imp" style="background:#28a745">IMPORTAR LISTA AGORA</button>
+            <textarea id="m3u-i" placeholder="Cole aqui seu texto começando com #EXTINF..."></textarea>
+            <button class="btn-red" id="btn-imp" style="background:#28a745">IMPORTAR TUDO AGORA</button>
         </div>
 
         <div class="admin-box">
             <h3>Gerenciar Clientes</h3>
             <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom: 10px;">
                 <input type="hidden" id="edit-user-id">
-                <input id="a-u" placeholder="Usuário" style="flex:1; min-width:100px; margin:0">
-                <input id="a-p" placeholder="Senha" style="flex:1; min-width:100px; margin:0">
-                <input id="a-d" type="number" placeholder="Dias" style="width:70px; margin:0">
-                <button id="b-c-u" class="btn-red" style="width:100%; margin-top:5px">SALVAR / RENOVAR</button>
+                <input id="a-u" placeholder="Nome do Usuário" style="flex:1; min-width:110px">
+                <input id="a-p" placeholder="Senha de Acesso" style="flex:1; min-width:110px">
+                <input id="a-d" type="number" placeholder="Dias (Ex: 30)" style="width:70px">
+                <button id="b-c-u" class="btn-red" style="width:100%; margin-top:5px">CRIAR / SALVAR ACESSO</button>
             </div>
             <div class="tabela-container">
                 <table>
@@ -82,7 +82,7 @@
         </div>
 
         <div class="admin-box">
-            <h3>Meus Conteúdos</h3>
+            <h3>Meus Conteúdos Cadastrados</h3>
             <div class="tabela-container">
                 <table>
                     <thead><tr><th>TÍTULO</th><th>CATEGORIA</th><th>AÇÕES</th></tr></thead>
@@ -104,22 +104,20 @@
             const user = document.getElementById('u-l').value;
             const pass = document.getElementById('p-l').value;
 
-            if(user === "Rhuan" && pass === "2026"){ 
-                entrar(true); return; 
-            } 
+            if(user === "Rhuan" && pass === "2026"){ entrar(true); return; } 
 
             const snap = await get(ref(db, 'usuarios'));
             let valid = false;
             snap.forEach(i => {
                 const d = i.val();
                 if(d.user === user && d.pass === pass) {
-                    if(d.status !== "ativo") { alert("Conta Suspensa!"); return; }
+                    if(d.status !== 'ativo') { alert("Acesso Suspenso!"); return; }
                     if(d.expira !== "Vitalício" && new Date().getTime() > d.expira) { alert("Acesso Expirado!"); return; }
                     valid = true;
                 }
             });
 
-            if(valid) entrar(false); else alert("Login Inválido");
+            if(valid) entrar(false); else alert("Login ou Senha Incorretos!");
         };
 
         function entrar(adm) {
@@ -130,6 +128,7 @@
         }
 
         function carregar() {
+            // CARREGAR CONTEÚDO
             onValue(ref(db, 'conteudo'), (s) => {
                 const v = document.getElementById('vitrine'); v.innerHTML = ""; let cats = {};
                 const lc = document.getElementById('l-c'); lc.innerHTML = "";
@@ -148,11 +147,12 @@
                 }
             });
 
+            // CARREGAR USUÁRIOS COM CÁLCULO DE PRAZO
             onValue(ref(db, 'usuarios'), (s) => {
                 const lu = document.getElementById('l-u'); lu.innerHTML = "";
                 s.forEach(i => { 
-                    const k = i.key; const v = i.val();
-                    let resto = "INFINITO";
+                    const k = i.key; const v = i.val(); 
+                    let resto = "Vitalício";
                     if(v.expira !== "Vitalício") {
                         const dias = Math.ceil((v.expira - new Date().getTime()) / (1000*60*60*24));
                         resto = dias > 0 ? dias + " dias" : "EXPIRADO";
@@ -165,46 +165,33 @@
             });
         }
 
-        window.del = (k) => confirm("Excluir conteúdo?") && remove(ref(db, `conteudo/${k}`));
-        window.edit = async (k) => { 
-            const d = (await get(ref(db, `conteudo/${k}`))).val(); 
-            document.getElementById('e-id').value=k; document.getElementById('f-n').value=d.nome; 
-            document.getElementById('f-c').value=d.categoria; document.getElementById('f-u').value=d.url; 
-            document.getElementById('f-p').value=d.capa; document.getElementById('t-f').innerText="EDITANDO: "+d.nome; window.scrollTo(0,400); 
-        };
-
-        window.delU = (k) => confirm("Excluir usuário?") && remove(ref(db, `usuarios/${k}`));
-        window.st = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
-        window.editU = async (k) => {
-            const d = (await get(ref(db, `usuarios/${k}`))).val();
-            document.getElementById('edit-user-id').value = k;
-            document.getElementById('a-u').value = d.user;
-            document.getElementById('a-p').value = d.pass;
-            window.scrollTo(0,100);
-        };
-
-        document.getElementById('b-s').onclick = () => {
-            const id = document.getElementById('e-id').value; 
-            const obj = { nome: document.getElementById('f-n').value, categoria: document.getElementById('f-c').value.toUpperCase(), url: document.getElementById('f-u').value, capa: document.getElementById('f-p').value };
-            if(id) update(ref(db, `conteudo/${id}`), obj).then(()=>{ alert("Salvo!"); document.getElementById('e-id').value=""; });
-            else push(ref(db, 'conteudo'), obj).then(()=>alert("Postado!"));
-        };
-
+        // FUNÇÕES USUÁRIO
         document.getElementById('b-c-u').onclick = () => {
             const id = document.getElementById('edit-user-id').value;
             const user = document.getElementById('a-u').value;
             const pass = document.getElementById('a-p').value;
             const dias = document.getElementById('a-d').value;
-            
             let expira = (dias && dias != "999") ? new Date().getTime() + (dias * 24 * 60 * 60 * 1000) : "Vitalício";
             
             const dados = { user, pass, expira, status: 'ativo' };
             if(id) update(ref(db, `usuarios/${id}`), dados).then(() => { alert("Atualizado!"); resetU(); });
             else push(ref(db, 'usuarios'), dados).then(() => { alert("Criado!"); resetU(); });
         };
-
+        window.editU = async (k) => { const d = (await get(ref(db, `usuarios/${k}`))).val(); document.getElementById('edit-user-id').value=k; document.getElementById('a-u').value=d.user; document.getElementById('a-p').value=d.pass; window.scrollTo(0,100); };
+        window.delU = (k) => confirm("Excluir usuário?") && remove(ref(db, `usuarios/${k}`));
+        window.st = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
         function resetU() { document.getElementById('edit-user-id').value=""; document.getElementById('a-u').value=""; document.getElementById('a-p').value=""; document.getElementById('a-d').value=""; }
 
+        // FUNÇÕES CONTEÚDO
+        window.del = (k) => confirm("Excluir?") && remove(ref(db, `conteudo/${k}`));
+        window.edit = async (k) => { const d = (await get(ref(db, `conteudo/${k}`))).val(); document.getElementById('e-id').value=k; document.getElementById('f-n').value=d.nome; document.getElementById('f-c').value=d.categoria; document.getElementById('f-u').value=d.url; document.getElementById('f-p').value=d.capa; window.scrollTo(0,400); };
+        document.getElementById('b-s').onclick = () => {
+            const id = document.getElementById('e-id').value; const obj = { nome: document.getElementById('f-n').value, categoria: document.getElementById('f-c').value.toUpperCase(), url: document.getElementById('f-u').value, capa: document.getElementById('f-p').value };
+            if(id) update(ref(db, `conteudo/${id}`), obj).then(()=> { alert("Salvo!"); document.getElementById('e-id').value=""; });
+            else push(ref(db, 'conteudo'), obj).then(()=>alert("Postado!"));
+        };
+
+        // IMPORTAÇÃO M3U RESTAURADA
         document.getElementById('btn-imp').onclick = async () => {
             const linhas = document.getElementById('m3u-i').value.split('\n'); let t = 0;
             for(let i=0; i<linhas.length; i++){

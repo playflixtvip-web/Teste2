@@ -8,52 +8,38 @@
     <style>
         :root { --bg: #0b0b0b; --red: #E50914; --card: #141414; --text: #fff; --gray: #2a2a2a; }
         body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
-        
-        /* HEADER */
         header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.95); display: flex; align-items: center; padding: 0 15px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid #222; }
-        
-        /* BOTÕES PADRÃO */
-        .btn-red { padding: 12px; background: var(--red); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 12px; transition: 0.3s; }
-        .btn-green { background: #28a745; }
-        .btn-dark { background: #333; }
-        .btn-red:active { transform: scale(0.98); }
-
-        /* INPUTS */
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #333; background: var(--gray); color: #fff; box-sizing: border-box; font-size: 14px; }
+        .btn-red { padding: 12px; background: var(--red); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #333; background: var(--gray); color: #fff; box-sizing: border-box; }
         
         #main-content { display: none; padding-top: 60px; }
         #player-area { width: 100%; aspect-ratio: 16/9; background: #000; position: sticky; top: 60px; z-index: 900; display: none; border-bottom: 2px solid var(--red); }
         video { width: 100%; height: 100%; }
 
-        /* LISTA E CATEGORIAS */
-        .category-item { background: #1a1a1a; padding: 18px; margin: 8px 15px; border-radius: 8px; cursor: pointer; border-left: 5px solid var(--red); font-weight: bold; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .category-item { background: #1a1a1a; padding: 18px; margin: 8px 15px; border-radius: 8px; cursor: pointer; border-left: 5px solid var(--red); font-weight: bold; display: flex; justify-content: space-between; }
         #detalhe-categoria { display: none; padding: 15px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; }
         .card { background: var(--card); border-radius: 6px; overflow: hidden; border: 1px solid #222; text-align: center; }
         .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
-        .card-title { font-size: 10px; padding: 8px; color: #ccc; }
 
-        /* PAINEL ADM - VISUAL IGUAL AS FOTOS */
+        /* PAINEL ADM */
         #admin-panel { display: none; padding: 80px 15px 40px; background: #000; min-height: 100vh; }
         .admin-box { background: #141414; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #222; }
-        .admin-box h3 { color: var(--red); margin: 0 0 20px 0; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        
-        /* TABELAS ADM */
-        .tabela-container { overflow-x: auto; margin-top: 15px; border-radius: 6px; background: #0c0c0c; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 300px; }
-        th { background: #1a1a1a; padding: 12px; text-align: left; color: #888; text-transform: uppercase; font-size: 10px; }
-        td { padding: 12px; border-bottom: 1px solid #1a1a1a; color: #eee; }
-        .btn-mini { padding: 6px 10px; border-radius: 4px; border: none; color: white; font-size: 10px; font-weight: bold; cursor: pointer; margin-right: 4px; }
+        .admin-box h3 { color: var(--red); margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        .tabela-container { overflow-x: auto; margin-top: 10px; background: #0c0c0c; border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        td, th { padding: 10px; border-bottom: 1px solid #1a1a1a; text-align: left; }
+        .btn-mini { padding: 5px 8px; border-radius: 4px; border: none; color: white; cursor: pointer; margin-right: 2px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="login-container" style="position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; z-index:9999;">
         <div style="text-align:center; background:#141414; padding:35px; border-radius:15px; border:1px solid #333; width:85%; max-width:340px;">
-            <h1 style="color:var(--red); margin-bottom: 30px; font-size: 28px; letter-spacing: 2px;">CLONEFLIX</h1>
+            <h1 style="color:var(--red); margin-bottom: 30px; font-size: 28px;">CLONEFLIX</h1>
             <input type="text" id="u-l" placeholder="Usuário">
             <input type="password" id="p-l" placeholder="Senha">
-            <button class="btn-red" id="b-e" style="width:100%">ENTRAR NO SISTEMA</button>
+            <button class="btn-red" id="b-e" style="width:100%">ENTRAR</button>
         </div>
     </div>
 
@@ -62,16 +48,16 @@
             <h2 style="color:var(--red); margin:0;">CLONEFLIX</h2>
             <div style="display: flex; gap: 8px;">
                 <button id="b-a" class="btn-red" style="display:none; padding: 8px 12px;">ADM</button>
-                <button class="btn-red btn-dark" style="padding: 8px 12px;" onclick="location.reload()">SAIR</button>
+                <button class="btn-red" style="background:#333" onclick="location.reload()">SAIR</button>
             </div>
         </header>
         <div id="player-area"><video id="main-video" controls playsinline></video></div>
-        <div id="user-info" style="padding:15px; font-size:12px; color:#aaa; background:#111; border-bottom:1px solid #222;">
-            <b>VALIDADE:</b> <span id="txt-validade" style="color:var(--red)">Verificando...</span>
+        <div id="user-info" style="padding:15px; font-size:12px; color:#aaa; background:#111;">
+            <b>VALIDADE:</b> <span id="txt-validade" style="color:var(--red)">---</span>
         </div>
         <div id="lista-categorias"></div>
         <div id="detalhe-categoria">
-            <button class="btn-red btn-dark" id="btn-voltar-cat" style="width:100%; margin-bottom:20px;">← VOLTAR PARA GRUPOS</button>
+            <button class="btn-red" id="btn-voltar-cat" style="width:100%; margin-bottom:20px; background:#222;">← VOLTAR PARA GRUPOS</button>
             <h3 id="nome-cat-titulo" style="border-left: 4px solid var(--red); padding-left: 12px;"></h3>
             <div class="grid" id="grid-conteudo"></div>
         </div>
@@ -79,38 +65,48 @@
 
     <div id="admin-panel">
         <div style="display:flex; justify-content: space-between; margin-bottom: 25px;">
-            <button class="btn-red btn-dark" id="b-v-adm">← VOLTAR AO APP</button>
-            <button class="btn-red" style="background:#555" onclick="location.reload()">LOGOUT</button>
+            <button class="btn-red" id="b-v-adm" style="background:#333">← VOLTAR AO APP</button>
+            <button class="btn-red" onclick="location.reload()">LOGOUT</button>
+        </div>
+
+        <div class="admin-box">
+            <h3>Adicionar Filme ou Canal</h3>
+            <input type="hidden" id="edit-cont-id">
+            <input id="c-n" placeholder="Nome do Conteúdo">
+            <input id="c-c" placeholder="Categoria (Ex: FILMES, CANAIS, SERIES)">
+            <input id="c-u" placeholder="URL do Conteúdo (.m3u8)">
+            <input id="c-p" placeholder="URL da Imagem (Capa)">
+            <button class="btn-red" id="btn-salvar-manual" style="width:100%">PUBLICAR PARA TODOS</button>
         </div>
 
         <div class="admin-box">
             <h3>Importar Lista (M3U)</h3>
-            <textarea id="m3u-i" rows="4" placeholder="Cole aqui seu texto começando com #EXTINF..."></textarea>
-            <button class="btn-red btn-green" id="btn-imp" style="width:100%">IMPORTAR TUDO AGORA</button>
+            <textarea id="m3u-i" rows="3" placeholder="Cole aqui seu texto #EXTINF..."></textarea>
+            <button class="btn-red" style="background:#28a745; width:100%" id="btn-imp">IMPORTAR TUDO AGORA</button>
         </div>
 
         <div class="admin-box">
-            <h3>Gerenciar Clientes</h3>
-            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <h3>Gerenciar Usuários</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:5px;">
                 <input type="hidden" id="edit-user-id">
-                <input id="a-u" placeholder="Nome do Cliente" style="flex:2">
-                <input id="a-p" placeholder="Senha de Acesso" style="flex:1">
-                <input id="a-d" type="number" placeholder="Dias" style="width:70px">
-                <button id="b-c-u" class="btn-red" style="width:100%">CRIAR OU ATUALIZAR ACESSO</button>
+                <input id="a-u" placeholder="Usuário" style="flex:1">
+                <input id="a-p" placeholder="Senha" style="flex:1">
+                <input id="a-d" type="number" placeholder="Dias" style="width:60px">
+                <button id="b-c-u" class="btn-red" style="width:100%">CRIAR ACESSO ONLINE</button>
             </div>
             <div class="tabela-container">
                 <table>
-                    <thead><tr><th>CLIENTE</th><th>VALIDADE</th><th>AÇÕES</th></tr></thead>
+                    <thead><tr><th>NOME</th><th>VALIDADE</th><th>AÇÕES</th></tr></thead>
                     <tbody id="l-u"></tbody>
                 </table>
             </div>
         </div>
 
         <div class="admin-box">
-            <h3>Conteúdos Cadastrados</h3>
+            <h3>Meus Conteúdos</h3>
             <div class="tabela-container">
                 <table>
-                    <thead><tr><th>NOME</th><th>CATEGORIA</th><th>AÇÕES</th></tr></thead>
+                    <thead><tr><th>NOME</th><th>GRUPO</th><th>AÇÕES</th></tr></thead>
                     <tbody id="l-c"></tbody>
                 </table>
             </div>
@@ -133,15 +129,12 @@
         document.getElementById('b-e').onclick = async () => {
             const user = document.getElementById('u-l').value;
             const pass = document.getElementById('p-l').value;
-            if(user === "Rhuan" && pass === "2026") return logado(true, "ADMINISTRADOR");
+            if(user === "Rhuan" && pass === "2026") return logado(true, "ADMIN");
             const snap = await get(ref(db, 'usuarios'));
             let v = null;
             snap.forEach(i => { if(i.val().user === user && i.val().pass === pass) v = i.val(); });
-            if(v) {
-                if(v.status !== 'ativo') return alert("Acesso Suspenso!");
-                let txt = v.expira === "Vitalício" ? "VITALÍCIO" : Math.ceil((v.expira - new Date().getTime())/(1000*60*60*24)) + " DIAS";
-                logado(false, txt);
-            } else alert("Usuário ou Senha incorretos!");
+            if(v) logado(false, v.expira === "Vitalício" ? "VITALÍCIO" : "ATIVO");
+            else alert("Dados incorretos!");
         };
 
         function logado(adm, val) {
@@ -159,7 +152,9 @@
                     const d = i.val(); const k = i.key;
                     if(!dadosConteudo[d.categoria]) dadosConteudo[d.categoria] = [];
                     dadosConteudo[d.categoria].push({...d, k});
-                    tabC.innerHTML += `<tr><td>${d.nome}</td><td>${d.categoria}</td><td><button class="btn-mini" style="background:red" onclick="window.delC('${k}')">DEL</button></td></tr>`;
+                    tabC.innerHTML += `<tr><td>${d.nome}</td><td>${d.categoria}</td><td>
+                        <button class="btn-mini" style="background:#007bff" onclick="window.editC('${k}')">ED</button>
+                        <button class="btn-mini" style="background:red" onclick="window.delC('${k}')">X</button></td></tr>`;
                 });
                 renderCategorias();
             });
@@ -170,8 +165,7 @@
                     const k = i.key; const v = i.val();
                     let resto = v.expira === "Vitalício" ? "VIT" : Math.ceil((v.expira - new Date().getTime())/(1000*60*60*24))+"d";
                     tabU.innerHTML += `<tr><td>${v.user}</td><td>${resto}</td><td>
-                        <button class="btn-mini" style="background:#444" onclick="window.stU('${k}','${v.status}')">${v.status.toUpperCase()}</button>
-                        <button class="btn-mini" style="background:#007bff" onclick="window.editU('${k}')">EDIT</button>
+                        <button class="btn-mini" style="background:#007bff" onclick="window.editU('${k}')">ED</button>
                         <button class="btn-mini" style="background:red" onclick="window.delU('${k}')">X</button></td></tr>`;
                 });
             });
@@ -187,16 +181,14 @@
                     document.getElementById('nome-cat-titulo').innerText = cat;
                     const grid = document.getElementById('grid-conteudo'); grid.innerHTML = "";
                     dadosConteudo[cat].forEach(f => {
-                        const card = document.createElement('div'); card.className='card'; card.innerHTML=`<img src="${f.capa}"><div class="card-title">${f.nome}</div>`;
+                        const card = document.createElement('div'); card.className='card'; card.innerHTML=`<img src="${f.capa}"><div style="font-size:10px; padding:5px; color:#ccc;">${f.nome}</div>`;
                         card.onclick = () => {
                             currentId = f.k; playerArea.style.display = 'block';
                             if(Hls.isSupported()){
                                 const hls = new Hls(); hls.loadSource(f.url); hls.attachMedia(video);
                                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                                    if(cat.includes("FILME") || cat.includes("SÉRIE")){
-                                        const saved = localStorage.getItem('time_'+f.k);
-                                        if(saved && confirm("Continuar de onde parou?")) video.currentTime = parseFloat(saved);
-                                    }
+                                    const saved = localStorage.getItem('time_'+f.k);
+                                    if(saved && confirm("Retomar de onde parou?")) video.currentTime = parseFloat(saved);
                                     video.play();
                                 });
                             }
@@ -215,12 +207,32 @@
             document.getElementById('lista-categorias').style.display='block';
         };
 
-        setInterval(() => { if(!video.paused && currentId) localStorage.setItem('time_'+currentId, video.currentTime); }, 5000);
+        // SALVAR MANUAL OU EDITAR
+        document.getElementById('btn-salvar-manual').onclick = () => {
+            const id = document.getElementById('edit-cont-id').value;
+            const obj = { 
+                nome: document.getElementById('c-n').value, 
+                categoria: document.getElementById('c-c').value.toUpperCase(), 
+                url: document.getElementById('c-u').value, 
+                capa: document.getElementById('c-p').value 
+            };
+            if(id) update(ref(db, `conteudo/${id}`), obj).then(() => { document.getElementById('edit-cont-id').value=""; alert("Conteúdo Atualizado!"); });
+            else push(ref(db, 'conteudo'), obj).then(() => alert("Conteúdo Publicado!"));
+            document.getElementById('c-n').value=""; document.getElementById('c-c').value=""; document.getElementById('c-u').value=""; document.getElementById('c-p').value="";
+        };
 
-        // FUNÇÕES ADM
+        window.editC = async (k) => {
+            const d = (await get(ref(db, `conteudo/${k}`))).val();
+            document.getElementById('edit-cont-id').value = k;
+            document.getElementById('c-n').value = d.nome;
+            document.getElementById('c-c').value = d.categoria;
+            document.getElementById('c-u').value = d.url;
+            document.getElementById('c-p').value = d.capa;
+            window.scrollTo(0, 100);
+        };
+
         document.getElementById('btn-imp').onclick = async () => {
-            const txt = document.getElementById('m3u-i').value;
-            const linhas = txt.split('\n');
+            const linhas = document.getElementById('m3u-i').value.split('\n');
             for(let i=0; i<linhas.length; i++){
                 if(linhas[i].includes('#EXTINF')){
                     const url = linhas[i+1]?.trim();
@@ -230,7 +242,7 @@
                     if(url) await push(ref(db, 'conteudo'), { nome: n.trim(), categoria: c.toUpperCase(), url, capa: p });
                 }
             }
-            alert("Processo Concluído!"); document.getElementById('m3u-i').value="";
+            alert("Lista Importada!"); document.getElementById('m3u-i').value="";
         };
 
         document.getElementById('b-c-u').onclick = () => {
@@ -238,23 +250,20 @@
             const dias = document.getElementById('a-d').value;
             let exp = dias ? new Date().getTime() + (dias * 24 * 60 * 60 * 1000) : "Vitalício";
             const obj = { user: document.getElementById('a-u').value, pass: document.getElementById('a-p').value, expira: exp, status: 'ativo' };
-            if(id) update(ref(db, `usuarios/${id}`), obj).then(()=> { document.getElementById('edit-user-id').value=""; alert("Dados Salvos!"); });
-            else push(ref(db, 'usuarios'), obj).then(()=>alert("Novo Cliente Criado!"));
+            if(id) update(ref(db, `usuarios/${id}`), obj).then(() => { document.getElementById('edit-user-id').value=""; alert("Salvo!"); });
+            else push(ref(db, 'usuarios'), obj).then(() => alert("Criado!"));
         };
 
         window.editU = async (k) => { 
             const d = (await get(ref(db, `usuarios/${k}`))).val();
-            document.getElementById('edit-user-id').value=k;
-            document.getElementById('a-u').value=d.user;
-            document.getElementById('a-p').value=d.pass;
-            window.scrollTo(0, 150);
+            document.getElementById('edit-user-id').value=k; document.getElementById('a-u').value=d.user; document.getElementById('a-p').value=d.pass;
         };
-        window.stU = (k, s) => update(ref(db, `usuarios/${k}`), {status: s=='ativo'?'suspenso':'ativo'});
-        window.delU = (k) => confirm("Excluir Cliente?") && remove(ref(db, `usuarios/${k}`));
-        window.delC = (k) => confirm("Excluir Conteúdo?") && remove(ref(db, `conteudo/${k}`));
+        window.delU = (k) => confirm("Deletar?") && remove(ref(db, `usuarios/${k}`));
+        window.delC = (k) => confirm("Deletar?") && remove(ref(db, `conteudo/${k}`));
 
         document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
         document.getElementById('b-v-adm').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
+        setInterval(() => { if(!video.paused && currentId) localStorage.setItem('time_'+currentId, video.currentTime); }, 5000);
     </script>
 </body>
 </html>

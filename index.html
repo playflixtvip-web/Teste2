@@ -12,12 +12,15 @@
         .btn-voltar { background: #2a2a2a; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .btn-red { background: var(--red); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
         
-        /* PLAYER COM CONTROLES DE EPISÓDIO */
         #player-area { width: 100%; background: #000; position: sticky; top: 60px; z-index: 900; display: none; border-bottom: 2px solid var(--red); }
         .player-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; }
         video { width: 100%; height: 100%; }
         .player-controls { display: flex; justify-content: center; gap: 20px; padding: 10px; background: #111; }
         .btn-skip { background: #333; color: white; border: none; padding: 8px 20px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+
+        #info-episodio { display:none; padding: 10px 15px; background: #1a1a1a; font-size: 13px; border-bottom: 1px solid #333; }
+        #lista-rapida-episodios { display:none; background: #080808; max-height: 160px; overflow-y: auto; border-bottom: 2px solid var(--red); }
+        .item-lista-rapida { padding: 12px 15px; border-bottom: 1px solid #111; font-size: 12px; display: flex; justify-content: space-between; cursor: pointer; }
 
         .container-box { background: var(--card); border-radius: 12px; padding: 20px; margin: 15px; border: 1px solid var(--border); }
         .box-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #fff; display: block; border-left: 4px solid var(--red); padding-left: 10px; }
@@ -63,6 +66,8 @@
                 <button class="btn-skip" id="btn-prev">❮ Anterior</button>
                 <button class="btn-skip" id="btn-next">Próximo ❯</button>
             </div>
+            <div id="info-episodio"><span style="color:var(--red); font-weight:bold;">ASSISTINDO:</span> <span id="nome-ep-atual"></span></div>
+            <div id="lista-rapida-episodios"></div>
         </div>
 
         <div style="padding: 10px 15px; font-size: 12px; color: #888; background: #111;">VALIDADE: <span id="txt-validade" style="color:var(--red); font-weight:bold;">---</span></div>
@@ -73,6 +78,7 @@
 
     <div id="admin-panel" style="display: none; padding-top: 20px; background: #000; min-height: 100vh;">
         <div style="padding: 0 15px;"><button class="btn-voltar" id="btn-voltar-adm">← VOLTAR AO APP</button></div>
+        
         <div class="container-box">
             <span class="box-title">Gerenciar Conteúdo</span>
             <input type="hidden" id="edit-id-cont">
@@ -82,15 +88,35 @@
             <textarea id="c-links" placeholder="Links" rows="2"></textarea>
             <input id="c-capa" placeholder="URL da Capa">
             <button class="btn-save" id="btn-salvar-db">SALVAR CONTEÚDO</button>
-            <div class="tabela-container"><table id="tabela-conteudo-adm" style="width:100%"></table></div>
+            
+            <div style="margin-top: 20px;">
+                <input type="text" id="busca-adm" placeholder="🔍 Filtrar conteúdo pelo nome..." style="border: 1px solid var(--red); background: #111;">
+            </div>
+
+            <div class="tabela-container">
+                <table style="width:100%">
+                    <thead><tr><th>NOME</th><th>CATEGORIA</th><th>AÇÃO</th></tr></thead>
+                    <tbody id="tabela-conteudo-adm"></tbody>
+                </table>
+            </div>
         </div>
+
         <div class="container-box">
             <span class="box-title">Gerenciar Usuários</span>
             <input type="hidden" id="edit-id-user">
-            <input id="u-nome" placeholder="Login"><input id="u-pass" placeholder="Senha">
-            <input type="number" id="u-dias" placeholder="Dias (999 = Vitalício)">
-            <button class="btn-save" id="btn-salvar-user" style="background: #28a745;">SALVAR USUÁRIO</button>
-            <div class="tabela-container"><table><thead><tr><th>USER</th><th>STATUS</th><th>AÇÃO</th></tr></thead><tbody id="lista-user-adm"></tbody></table></div>
+            <input id="u-nome" placeholder="Login">
+            <input id="u-pass" placeholder="Senha">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-save" id="btn-salvar-user" style="background: #28a745;">SALVAR ALTERAÇÃO</button>
+                <button class="btn-save" id="btn-novo-user" style="background: #007bff;">CRIAR NOVO</button>
+            </div>
+            
+            <div class="tabela-container" style="margin-top: 15px;">
+                <table>
+                    <thead><tr><th>USER</th><th>EXPIRA EM</th><th>AÇÃO</th></tr></thead>
+                    <tbody id="lista-user-adm"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -104,25 +130,40 @@
         const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
         let bancoDados = []; const video = document.getElementById('main-video');
-        
-        // Variáveis de controle de episódios
-        let listaEpisodiosAtual = [];
-        let indexEpisodioAtual = 0;
-        let linkAtual = "";
+        let listaEpisodiosAtual = []; let indexEpisodioAtual = 0; let linkAtual = "";
 
-        // LOGIN (Mantido conforme v10)
+        // LOGIN BLINDADO
         document.getElementById('btn-entrar').onclick = async () => {
-            const u = document.getElementById('u-l').value.trim(); const p = document.getElementById('p-l').value.trim();
-            if(u === "Rhuan" && p === "2026") return logar(true, "VITALÍCIO");
-            const snap = await get(ref(db, 'usuarios'));
-            let enc = null; snap.forEach(c => { if(c.val().user === u && c.val().pass === p) enc = {...c.val(), id: c.key}; });
-            if(enc) {
-                if(enc.suspenso) return alert("Conta suspensa!");
-                if(enc.expira === "vitalicio") return logar(false, "VITALÍCIO");
-                const dias = Math.ceil((enc.expira - Date.now()) / 86400000);
-                if(dias <= 0) return alert("Expirado!");
-                logar(false, dias + " DIAS");
-            } else alert("Acesso negado!");
+            const u = document.getElementById('u-l').value.trim(); 
+            const p = document.getElementById('p-l').value.trim();
+            
+            if(u === "Rhuan" && p === "2026") { logar(true, "VITALÍCIO"); return; }
+
+            try {
+                const snap = await get(ref(db, 'usuarios'));
+                let enc = null;
+                snap.forEach(c => { 
+                    const d = c.val();
+                    if(d.user === u && d.pass === p) enc = {...d, id: c.key}; 
+                });
+
+                if(enc) {
+                    if(enc.suspenso) return alert("Conta suspensa!");
+                    
+                    let validadeTexto = "---";
+                    if(enc.expira === "vitalicio") { 
+                        validadeTexto = "VITALÍCIO"; 
+                    } else {
+                        const agora = Date.now();
+                        if(agora > enc.expira) return alert("Acesso expirado!");
+                        const dt = new Date(enc.expira);
+                        validadeTexto = dt.toLocaleDateString('pt-BR') + " " + dt.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    }
+                    logar(false, validadeTexto);
+                } else {
+                    alert("Usuário ou senha incorretos!");
+                }
+            } catch (e) { alert("Erro de conexão!"); }
         };
 
         function logar(adm, val) {
@@ -133,91 +174,127 @@
             carregarTudo();
         }
 
-        // SALVAR POSIÇÃO DO VÍDEO
-        video.ontimeupdate = () => {
-            if(linkAtual) localStorage.setItem('time_' + btoa(linkAtual), video.currentTime);
-        };
-
-        function play(u, lista = [], index = 0) {
-            linkAtual = u.trim();
-            listaEpisodiosAtual = lista;
-            indexEpisodioAtual = index;
-            
-            document.getElementById('player-area').style.display='block';
-            document.getElementById('btn-prev').style.display = lista.length > 1 ? 'block' : 'none';
-            document.getElementById('btn-next').style.display = lista.length > 1 ? 'block' : 'none';
-
-            if(Hls.isSupported()){
-                const h = new Hls(); h.loadSource(linkAtual); h.attachMedia(video);
-                h.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo());
-            } else { video.src = linkAtual; video.play(); iniciarVideo(); }
-            
-            window.scrollTo(0,0);
-        }
-
-        function iniciarVideo() {
-            const salvo = localStorage.getItem('time_' + btoa(linkAtual));
-            if(salvo && salvo > 5) {
-                if(confirm("Deseja continuar de onde parou?")) video.currentTime = parseFloat(salvo);
-            }
-            video.play();
-        }
-
-        // BOTÕES PRÓXIMO/ANTERIOR
-        document.getElementById('btn-next').onclick = () => {
-            if(indexEpisodioAtual < listaEpisodiosAtual.length - 1) {
-                play(listaEpisodiosAtual[indexEpisodioAtual + 1], listaEpisodiosAtual, indexEpisodioAtual + 1);
-            } else { alert("Último episódio!"); }
-        };
-
-        document.getElementById('btn-prev').onclick = () => {
-            if(indexEpisodioAtual > 0) {
-                play(listaEpisodiosAtual[indexEpisodioAtual - 1], listaEpisodiosAtual, indexEpisodioAtual - 1);
-            }
-        };
-
-        // MODAL DE EPISÓDIOS (Ajustado para passar a lista)
-        function epis(t, u) {
-            document.getElementById('modal-epis').style.display='block';
-            document.getElementById('epis-titulo').innerText = t;
-            const c = document.getElementById('epis-lista'); c.innerHTML = "";
-            const links = u.split('\n').filter(l => l.trim());
-            
-            links.forEach((l, i) => {
-                const d = document.createElement('div'); d.className = 'folder-item';
-                d.innerHTML = `<span>Episódio ${i+1}</span><span>▶</span>`;
-                d.onclick = () => {
-                    play(l, links, i);
-                    document.getElementById('modal-temp').style.display='none';
-                    document.getElementById('modal-epis').style.display='none';
-                };
-                c.appendChild(d);
-            });
-        }
-
-        // CARREGAR DADOS (Mantido v10)
+        // CARREGAMENTO E GERENCIAMENTO
         function carregarTudo() {
-            onValue(ref(db, 'conteudo'), (s) => {
-                bancoDados = []; s.forEach(item => { bancoDados.push({...item.val(), id: item.key}); });
-                renderADM(); renderCategorias();
+            onValue(ref(db, 'conteudo'), (s) => { 
+                bancoDados = []; s.forEach(item => { bancoDados.push({...item.val(), id: item.key}); }); 
+                renderADM(); renderCategorias(); 
             });
             onValue(ref(db, 'usuarios'), (s) => {
                 const listU = document.getElementById('lista-user-adm'); listU.innerHTML = "";
                 s.forEach(item => {
                     const d = item.val(); const id = item.key;
-                    let st = d.suspenso ? "SUSPENSO" : (d.expira === "vitalicio" ? "Vitalício" : Math.ceil((d.expira - Date.now())/86400000)+"d");
-                    listU.innerHTML += `<tr><td>${d.user}</td><td>${st}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editU('${id}')">ED</button><button class="btn-mini" style="background:#ffc107;color:black" onclick="window.toggleU('${id}', ${d.suspenso})">S/A</button><button class="btn-mini" style="background:#dc3545" onclick="window.delU('${id}')">X</button></td></tr>`;
+                    let st = "";
+                    if(d.suspenso) { st = "SUSPENSO"; } 
+                    else if(d.expira === "vitalicio") { st = "Vitalício"; } 
+                    else {
+                        const dt = new Date(d.expira);
+                        st = dt.toLocaleDateString('pt-BR') + " " + dt.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    }
+                    listU.innerHTML += `<tr><td>${d.user}</td><td>${st}</td><td>
+                        <button class="btn-mini" style="background:#007bff" onclick="window.editU('${id}')">ED</button>
+                        <button class="btn-mini" style="background:#17a2b8" onclick="window.addDias('${id}')">+D</button>
+                        <button class="btn-mini" style="background:#ffc107;color:black" onclick="window.toggleU('${id}', ${d.suspenso})">S/A</button>
+                        <button class="btn-mini" style="background:#dc3545" onclick="window.delU('${id}')">X</button>
+                    </td></tr>`;
                 });
             });
         }
 
-        // CRUD E NAVEGAÇÃO (Mantidos da v10)
-        function renderADM() {
-            const list = document.getElementById('tabela-conteudo-adm'); list.innerHTML = "";
-            bancoDados.forEach(d => {
-                list.innerHTML += `<tr><td>${d.nome}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editC('${d.id}')">ED</button><button class="btn-mini" style="background:#dc3545" onclick="window.delC('${d.id}')">X</button></td></tr>`;
+        // FUNÇÕES DE USUÁRIO
+        document.getElementById('btn-novo-user').onclick = () => {
+            document.getElementById('edit-id-user').value = "";
+            document.getElementById('u-nome').value = "";
+            document.getElementById('u-pass').value = "";
+            alert("Campos limpos. Digite Usuário/Senha e clique em SALVAR.");
+        };
+
+        document.getElementById('btn-salvar-user').onclick = () => {
+            const id = document.getElementById('edit-id-user').value;
+            const user = document.getElementById('u-nome').value.trim();
+            const pass = document.getElementById('u-pass').value.trim();
+            if(!user || !pass) return alert("Preencha Usuário e Senha!");
+
+            if(id) {
+                update(ref(db, `usuarios/${id}`), { user, pass });
+                alert("Dados atualizados!");
+            } else {
+                const expira = Date.now() + (1 * 3600000); // 1 hora teste
+                push(ref(db, 'usuarios'), { user, pass, expira, suspenso: false });
+                alert("Criado com 1h de teste!");
+            }
+            document.getElementById('u-nome').value = ""; document.getElementById('u-pass').value = ""; document.getElementById('edit-id-user').value = "";
+        };
+
+        window.editU = async (id) => {
+            const d = (await get(ref(db, `usuarios/${id}`))).val();
+            document.getElementById('edit-id-user').value = id; 
+            document.getElementById('u-nome').value = d.user;
+            document.getElementById('u-pass').value = d.pass;
+            window.scrollTo(0, document.body.scrollHeight);
+        };
+
+        window.addDias = async (id) => {
+            const d = (await get(ref(db, `usuarios/${id}`))).val();
+            const diasAdd = prompt("Dias a adicionar? (999=Vitalício)");
+            if(diasAdd) {
+                let novaExp;
+                if(diasAdd == "999") novaExp = "vitalicio";
+                else {
+                    let base = (d.expira === "vitalicio" || Date.now() > d.expira) ? Date.now() : d.expira;
+                    novaExp = base + (parseInt(diasAdd) * 86400000);
+                }
+                update(ref(db, `usuarios/${id}`), { expira: novaExp });
+                alert("Validade atualizada!");
+            }
+        };
+
+        // RESTANTE DAS FUNÇÕES (PLAYER E CONTEÚDO)
+        video.ontimeupdate = () => { if(linkAtual) localStorage.setItem('time_' + btoa(linkAtual), video.currentTime); };
+        function play(u, lista = [], index = 0) {
+            linkAtual = u.trim(); listaEpisodiosAtual = lista; indexEpisodioAtual = index;
+            document.getElementById('player-area').style.display='block';
+            document.getElementById('btn-prev').style.display = lista.length > 1 ? 'block' : 'none';
+            document.getElementById('btn-next').style.display = lista.length > 1 ? 'block' : 'none';
+            const infoDiv = document.getElementById('info-episodio');
+            const listaDiv = document.getElementById('lista-rapida-episodios');
+            if(lista.length > 1) {
+                infoDiv.style.display = 'block'; listaDiv.style.display = 'block';
+                document.getElementById('nome-ep-atual').innerText = "Episódio " + (index + 1);
+                listaDiv.innerHTML = "";
+                lista.forEach((l, i) => {
+                    const item = document.createElement('div'); item.className = 'item-lista-rapida';
+                    item.style.background = (i === index) ? '#222' : 'transparent';
+                    item.innerHTML = `<span style="color:${i === index ? 'var(--red)' : '#fff'}">${i === index ? '▶' : ''} Episódio ${i+1}</span>`;
+                    item.onclick = () => play(l, lista, i); listaDiv.appendChild(item);
+                });
+            } else { infoDiv.style.display = 'none'; listaDiv.style.display = 'none'; }
+            if(Hls.isSupported()){ const h = new Hls(); h.loadSource(linkAtual); h.attachMedia(video); h.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); } else { video.src = linkAtual; video.play(); iniciarVideo(); }
+            window.scrollTo(0,0);
+        }
+        function iniciarVideo() {
+            const salvo = localStorage.getItem('time_' + btoa(linkAtual));
+            if(salvo && salvo > 5) { if(confirm("Continuar de onde parou?")) video.currentTime = parseFloat(salvo); }
+            video.play();
+        }
+        document.getElementById('btn-next').onclick = () => { if(indexEpisodioAtual < listaEpisodiosAtual.length - 1) { play(listaEpisodiosAtual[indexEpisodioAtual + 1], listaEpisodiosAtual, indexEpisodioAtual + 1); } };
+        document.getElementById('btn-prev').onclick = () => { if(indexEpisodioAtual > 0) { play(listaEpisodiosAtual[indexEpisodioAtual - 1], listaEpisodiosAtual, indexEpisodioAtual - 1); } };
+        function epis(t, u) {
+            document.getElementById('modal-epis').style.display='block'; document.getElementById('epis-titulo').innerText = t;
+            const c = document.getElementById('epis-lista'); c.innerHTML = "";
+            const links = u.split('\n').filter(l => l.trim());
+            links.forEach((l, i) => {
+                const d = document.createElement('div'); d.className = 'folder-item'; d.innerHTML = `<span>Episódio ${i+1}</span><span>▶</span>`;
+                d.onclick = () => { play(l, links, i); document.getElementById('modal-temp').style.display='none'; document.getElementById('modal-epis').style.display='none'; };
+                c.appendChild(d);
             });
         }
+        function renderADM(termo = "") {
+            const list = document.getElementById('tabela-conteudo-adm'); list.innerHTML = "";
+            const filtrados = bancoDados.filter(d => d.nome.toLowerCase().includes(termo.toLowerCase()));
+            filtrados.forEach(d => { list.innerHTML += `<tr><td>${d.nome}</td><td style="color:var(--red); font-weight:bold;">${d.categoria}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editC('${d.id}')">ED</button><button class="btn-mini" style="background:#dc3545" onclick="window.delC('${d.id}')">X</button></td></tr>`; });
+        }
+        document.getElementById('busca-adm').onkeyup = (e) => renderADM(e.target.value);
         function renderCategorias() {
             const container = document.getElementById('view-categorias'); container.innerHTML = "";
             const cats = [...new Set(bancoDados.map(b => b.categoria))].sort();
@@ -229,14 +306,8 @@
         }
         function filtrar(t="", cat=null) {
             const grid = document.getElementById('grid-itens'); grid.innerHTML = "";
-            let itens = bancoDados;
-            if(cat) itens = itens.filter(b => b.categoria === cat);
-            if(t) itens = itens.filter(b => b.nome.toLowerCase().includes(t.toLowerCase()));
-            const agrup = {};
-            itens.forEach(it => {
-                if(it.tipo==='serie'){ let b=it.nome.split(" -")[0].trim(); if(!agrup[b])agrup[b]=[]; agrup[b].push(it); }
-                else { card(it.nome, it.capa, it.url, false, grid); }
-            });
+            let itens = bancoDados; if(cat) itens = itens.filter(b => b.categoria === cat); if(t) itens = itens.filter(b => b.nome.toLowerCase().includes(t.toLowerCase()));
+            const agrup = {}; itens.forEach(it => { if(it.tipo==='serie'){ let b=it.nome.split(" -")[0].trim(); if(!agrup[b])agrup[b]=[]; agrup[b].push(it); } else { card(it.nome, it.capa, it.url, false, grid); } });
             Object.keys(agrup).forEach(n => card(n, agrup[n][0].capa, agrup[n], true, grid));
         }
         function card(n, c, d, s, g) {
@@ -256,27 +327,13 @@
             document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome;
             document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; 
             document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa;
+            window.scrollTo(0,0);
         };
         document.getElementById('btn-salvar-db').onclick = () => {
             const id = document.getElementById('edit-id-cont').value;
             const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value };
             id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj);
             alert("Salvo!"); document.getElementById('edit-id-cont').value = "";
-        };
-        document.getElementById('btn-salvar-user').onclick = () => {
-            const id = document.getElementById('edit-id-user').value;
-            const user = document.getElementById('u-nome').value;
-            const pass = document.getElementById('u-pass').value;
-            const dias = parseInt(document.getElementById('u-dias').value);
-            let expira = (dias >= 999) ? "vitalicio" : Date.now() + (dias * 86400000);
-            const obj = { user, pass, expira, suspenso: false };
-            id ? update(ref(db, `usuarios/${id}`), obj) : push(ref(db, 'usuarios'), obj);
-            alert("Salvo!");
-        };
-        window.editU = async (id) => {
-            const d = (await get(ref(db, `usuarios/${id}`))).val();
-            document.getElementById('edit-id-user').value = id; document.getElementById('u-nome').value = d.user;
-            document.getElementById('u-pass').value = d.pass; document.getElementById('u-dias').value = (d.expira==="vitalicio")?999:Math.ceil((d.expira-Date.now())/86400000);
         };
         window.toggleU = (id, s) => update(ref(db, `usuarios/${id}`), { suspenso: !s });
         window.delU = (id) => confirm("Excluir?") && remove(ref(db, `usuarios/${id}`));

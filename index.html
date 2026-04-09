@@ -28,7 +28,22 @@
 
         .card { flex: 0 0 auto; width: 110px; border-radius: 4px; overflow: hidden; cursor: pointer; background: var(--card); border: 1px solid #222; }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
-        .card-title { font-size: 10px; padding: 5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
+        
+        /* Ajuste para não cortar o nome do filme */
+        .card-title { 
+            font-size: 11px; 
+            padding: 6px 5px; 
+            text-align: center; 
+            color: #fff; 
+            font-weight: 500;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+            height: 32px;
+        }
 
         #player-area { width: 100%; background: #000; position: sticky; top: 60px; z-index: 900; display: none; border-bottom: 2px solid var(--red); }
         .player-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; }
@@ -130,9 +145,8 @@
         const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
         let bancoDados = []; const video = document.getElementById('main-video');
-        let playlistAtual = []; let indexEpiAtual = 0;
+        let playlistAtual = []; let indexEpiAtual = 0; let linkAtual = ""; let hls = null;
 
-        // LOGIN ORIGINAL PRESERVADO
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('u-l').value; const p = document.getElementById('p-l').value;
             if(u === "Rhuan" && p === "2026") { logar(true); return; }
@@ -189,11 +203,16 @@
             });
         }
 
-        // FUNÇÕES DO PLAYER E EPISÓDIOS
+        video.ontimeupdate = () => { if(linkAtual) localStorage.setItem('time_' + btoa(linkAtual), video.currentTime); };
+
         window.iniciarPlayer = (url, nome, listaEpis = [], index = 0) => {
+            linkAtual = url.split('\n')[0].trim();
+            playlistAtual = listaEpis; 
+            indexEpiAtual = index;
+
             document.getElementById('player-area').style.display = 'block';
-            playlistAtual = listaEpis; indexEpiAtual = index;
             const listDiv = document.getElementById('lista-epis-inline');
+            
             if(playlistAtual.length > 1) {
                 listDiv.style.display = 'block';
                 document.getElementById('btn-prev-epi').style.display = 'block';
@@ -204,9 +223,30 @@
                 document.getElementById('btn-prev-epi').style.display = 'none';
                 document.getElementById('btn-next-epi').style.display = 'none';
             }
-            if(Hls.isSupported()){ const h = new Hls(); h.loadSource(url); h.attachMedia(video); h.on(Hls.Events.MANIFEST_PARSED, () => video.play()); } else { video.src = url; video.play(); }
+
+            if(hls) { hls.destroy(); hls = null; }
+
+            if(Hls.isSupported()){ 
+                hls = new Hls(); 
+                hls.loadSource(linkAtual); 
+                hls.attachMedia(video); 
+                hls.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); 
+            } else { 
+                video.src = linkAtual; 
+                video.play(); 
+                iniciarVideo();
+            }
             window.scrollTo(0,0);
         };
+
+        function iniciarVideo() {
+            const salvo = localStorage.getItem('time_' + btoa(linkAtual));
+            if(salvo && salvo > 5) { if(confirm("Continuar de onde parou?")) video.currentTime = parseFloat(salvo); }
+            video.play();
+        }
+
+        document.getElementById('btn-next-epi').onclick = () => { if(indexEpiAtual < playlistAtual.length - 1) { iniciarPlayer(playlistAtual[indexEpiAtual + 1], "Série", playlistAtual, indexEpiAtual + 1); } };
+        document.getElementById('btn-prev-epi').onclick = () => { if(indexEpiAtual > 0) { iniciarPlayer(playlistAtual[indexEpiAtual - 1], "Série", playlistAtual, indexEpiAtual - 1); } };
 
         function renderListaInline() {
             const cont = document.getElementById('lista-epis-inline');
@@ -220,10 +260,6 @@
             });
         }
 
-        document.getElementById('btn-next-epi').onclick = () => { if(indexEpiAtual < playlistAtual.length - 1) iniciarPlayer(playlistAtual[indexEpiAtual + 1], "Série", playlistAtual, indexEpiAtual + 1); };
-        document.getElementById('btn-prev-epi').onclick = () => { if(indexEpiAtual > 0) iniciarPlayer(playlistAtual[indexEpiAtual - 1], "Série", playlistAtual, indexEpiAtual - 1); };
-
-        // RESTANTE DAS FUNÇÕES ORIGINAIS
         function renderHome(filtroTipo = null) {
             const container = document.getElementById('conteudo-home'); container.innerHTML = "";
             const tipos = [{ id: 'tv', label: 'TV / Canais' }, { id: 'filme', label: 'Filmes' }, { id: 'serie', label: 'Séries' }];
@@ -268,7 +304,7 @@
                 d.onclick = () => abrirEpisodios(it.nome, it.url);
                 cont.appendChild(d);
             });
-        }
+        };
 
         function abrirEpisodios(nome, urls) {
             document.getElementById('modal-epis').style.display = 'block';
@@ -292,7 +328,6 @@
             bancoDados.filter(it => it.categoria === cat && it.tipo === tipo).forEach(it => criarCard(it.nome, it.capa, it.url, it.tipo === 'serie', grid));
         };
 
-        // ADMIN TOOLS ORIGINAIS
         window.toggleU = (id, s) => update(ref(db, `usuarios/${id}`), { suspenso: !s });
         window.delU = (id) => confirm("Excluir?") && remove(ref(db, `usuarios/${id}`));
         window.editU = async (id) => { const snap = await get(ref(db, `usuarios/${id}`)); const d = snap.val(); document.getElementById('edit-id-user').value = id; document.getElementById('u-nome').value = d.user; document.getElementById('u-pass').value = d.pass; };

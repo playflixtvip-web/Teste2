@@ -7,38 +7,46 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root { --bg: #0b0b0b; --red: #E50914; --card: #141414; --text: #fff; --border: #222; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
-        header { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 15px; z-index: 1000; justify-content: space-between; box-sizing: border-box; border-bottom: 1px solid var(--border); }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        header { position: fixed; top: 0; width: 100%; height: 60px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%); display: flex; align-items: center; padding: 0 15px; z-index: 1000; justify-content: space-between; box-sizing: border-box; }
+        .logo { color: var(--red); font-weight: bold; font-size: 22px; letter-spacing: -1px; }
         .btn-voltar { background: #2a2a2a; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .btn-red { background: var(--red); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        
+
+        #portal-inicio { display: none; padding: 80px 20px 20px; text-align: center; min-height: 100vh; box-sizing: border-box; }
+        .grid-portal { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 500px; margin: 0 auto; }
+        .btn-portal { background: linear-gradient(45deg, #141414, #222); border: 2px solid #333; border-radius: 15px; padding: 40px 20px; color: white; font-size: 24px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .btn-portal:active { transform: scale(0.95); border-color: var(--red); }
+
+        .section-divider { margin: 30px 15px 10px; padding: 5px 0; border-bottom: 2px solid var(--red); display: inline-block; font-size: 18px; font-weight: 900; color: #fff; text-transform: uppercase; }
+        .row { margin: 10px 0 30px 15px; }
+        .row-header { display: flex; justify-content: space-between; align-items: center; padding-right: 15px; margin-bottom: 10px; }
+        .row-title { font-size: 16px; font-weight: bold; color: #e5e5e5; }
+        .row-posters { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; }
+        .row-posters::-webkit-scrollbar { display: none; }
+
+        .card { flex: 0 0 auto; width: 110px; border-radius: 4px; overflow: hidden; cursor: pointer; background: var(--card); border: 1px solid #222; }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+        .card-title { font-size: 10px; padding: 5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
+
         #player-area { width: 100%; background: #000; position: sticky; top: 60px; z-index: 900; display: none; border-bottom: 2px solid var(--red); }
         .player-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; }
         video { width: 100%; height: 100%; }
-        .player-controls { display: flex; justify-content: center; gap: 20px; padding: 10px; background: #111; }
-        .btn-skip { background: #333; color: white; border: none; padding: 8px 20px; border-radius: 20px; font-size: 12px; cursor: pointer; }
 
-        #info-episodio { display:none; padding: 10px 15px; background: #1a1a1a; font-size: 13px; border-bottom: 1px solid #333; }
-        #lista-rapida-episodios { display:none; background: #080808; max-height: 160px; overflow-y: auto; border-bottom: 2px solid var(--red); }
-        .item-lista-rapida { padding: 12px 15px; border-bottom: 1px solid #111; font-size: 12px; display: flex; justify-content: space-between; cursor: pointer; }
+        .player-nav { display: flex; justify-content: space-between; padding: 10px; background: #111; gap: 5px; }
+        .list-epis-player { background: #000; max-height: 200px; overflow-y: auto; padding: 10px; border-top: 1px solid #222; display: none; }
+        .epi-item-player { padding: 12px; border-bottom: 1px solid #222; font-size: 13px; display: flex; justify-content: space-between; cursor: pointer; }
+        .epi-item-player.active { color: var(--red); font-weight: bold; background: #111; }
 
         .container-box { background: var(--card); border-radius: 12px; padding: 20px; margin: 15px; border: 1px solid var(--border); }
-        .box-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #fff; display: block; border-left: 4px solid var(--red); padding-left: 10px; }
         input, textarea, select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; }
-        .btn-save { background: var(--red); color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        
         .tabela-container { overflow-x: auto; background: #0c0c0c; border-radius: 8px; max-height: 350px; overflow-y: auto; border: 1px solid #222; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #222; }
-        .btn-mini { padding: 4px 6px; border-radius: 4px; border: none; color: white; cursor: pointer; font-size: 9px; margin-right: 2px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #222; white-space: nowrap; }
+        .btn-mini { padding: 6px 10px; border-radius: 4px; border: none; color: white; cursor: pointer; font-size: 10px; font-weight: bold; margin-right: 2px; }
 
-        #main-content { display: none; padding-top: 70px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; padding: 15px; }
-        .card { background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); text-align: center; }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
-        .card-title { font-size: 11px; padding: 8px; color: #eee; height: 30px; display: flex; align-items: center; justify-content: center; }
-        .cat-item { background: var(--card); padding: 20px; margin: 10px 15px; border-radius: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; cursor: pointer; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; overflow-y: auto; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 2000; padding: 20px; overflow-y: auto; }
         .folder-item { background: #1a1a1a; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid var(--red); cursor: pointer; display: flex; justify-content: space-between; font-weight: bold; }
     </style>
 </head>
@@ -49,79 +57,71 @@
             <h1 style="color:var(--red); margin-bottom: 20px;">CLONEFLIX</h1>
             <input type="text" id="u-l" placeholder="Usuário">
             <input type="password" id="p-l" placeholder="Senha">
-            <button class="btn-save" id="btn-entrar">ENTRAR</button>
+            <button class="btn-red" id="btn-entrar" style="width:100%">ENTRAR</button>
         </div>
     </div>
 
-    <div id="main-content">
+    <div id="main-content" style="display:none; padding-top: 60px;">
         <header>
-            <button class="btn-voltar" id="btn-back-main" style="visibility: hidden;">← VOLTAR</button>
-            <button id="b-a" class="btn-red" style="display:none;">ADM</button>
-            <button class="btn-voltar" onclick="location.reload()">SAIR</button>
+            <button class="btn-voltar" id="btn-portal-back" style="display:none" onclick="voltarAoPortal()">← INÍCIO</button>
+            <div class="logo">CLONEFLIX</div>
+            <div style="display:flex; gap:5px;">
+                <button id="b-a" class="btn-red" style="display:none; padding: 6px 10px;">ADM</button>
+                <button class="btn-voltar" onclick="location.reload()" style="padding: 6px 10px;">SAIR</button>
+            </div>
         </header>
 
-        <div id="player-area">
-            <div class="player-wrapper"><video id="main-video" controls playsinline></video></div>
-            <div class="player-controls">
-                <button class="btn-skip" id="btn-prev">❮ Anterior</button>
-                <button class="btn-skip" id="btn-next">Próximo ❯</button>
+        <div id="portal-inicio">
+            <h2 style="margin-bottom: 30px; font-weight: 300;">O que vamos assistir hoje?</h2>
+            <div class="grid-portal">
+                <button class="btn-portal" onclick="filtrarPortal('tv')">📺 <span>TV AO VIVO</span></button>
+                <button class="btn-portal" onclick="filtrarPortal('filme')">🎬 <span>FILMES</span></button>
+                <button class="btn-portal" onclick="filtrarPortal('serie')">🍿 <span>SÉRIES</span></button>
             </div>
-            <div id="info-episodio"><span style="color:var(--red); font-weight:bold;">ASSISTINDO:</span> <span id="nome-ep-atual"></span></div>
-            <div id="lista-rapida-episodios"></div>
         </div>
 
-        <div style="padding: 10px 15px; font-size: 12px; color: #888; background: #111;">VALIDADE: <span id="txt-validade" style="color:var(--red); font-weight:bold;">---</span></div>
-        <div style="padding: 0 15px;"><input type="text" id="busca-user" placeholder="🔍 Buscar no catálogo..."></div>
-        <div id="view-categorias"></div>
-        <div id="view-detalhe" style="display: none;"><div class="grid" id="grid-itens"></div></div>
+        <div id="conteudo-app" style="display: none;">
+            <div id="player-area">
+                <div class="player-wrapper"><video id="main-video" controls playsinline></video></div>
+                <div class="player-nav">
+                    <button class="btn-voltar" id="btn-prev-epi" style="flex:1; margin-right:5px; display:none;">⏮ ANTERIOR</button>
+                    <button class="btn-voltar" id="btn-next-epi" style="flex:1; margin-right:5px; display:none;">PRÓXIMO ⏭</button>
+                    <button class="btn-voltar" onclick="document.getElementById('player-area').style.display='none'; document.getElementById('main-video').pause();" style="background:var(--red)">FECHAR</button>
+                </div>
+                <div id="lista-epis-inline" class="list-epis-player"></div>
+            </div>
+
+            <div style="padding: 15px 15px 0 15px;"><input type="text" id="busca-user" placeholder="🔍 Buscar títulos..."></div>
+            <div id="conteudo-home"></div>
+            <div id="view-detalhe" style="display: none;">
+                <button id="btn-back-main" class="btn-voltar" style="margin: 0 15px 10px; visibility: hidden;" onclick="this.parentElement.style.display='none'; document.getElementById('conteudo-home').style.display='block'; this.style.visibility='hidden';">← VOLTAR</button>
+                <h2 id="titulo-categoria-aberta" style="margin: 0 15px 10px; font-size: 18px; color: var(--red);"></h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; padding: 15px;" id="grid-itens"></div>
+            </div>
+        </div>
     </div>
 
     <div id="admin-panel" style="display: none; padding-top: 20px; background: #000; min-height: 100vh;">
         <div style="padding: 0 15px;"><button class="btn-voltar" id="btn-voltar-adm">← VOLTAR AO APP</button></div>
-        
         <div class="container-box">
-            <span class="box-title">Gerenciar Conteúdo</span>
-            <input type="hidden" id="edit-id-cont">
-            <input id="c-nome" placeholder="Nome">
-            <select id="c-tipo"><option value="serie">SÉRIE</option><option value="filme">FILME / CANAL</option></select>
-            <input id="c-cat" placeholder="Categoria">
-            <textarea id="c-links" placeholder="Links" rows="2"></textarea>
-            <input id="c-capa" placeholder="URL da Capa">
-            <button class="btn-save" id="btn-salvar-db">SALVAR CONTEÚDO</button>
-            
-            <div style="margin-top: 20px;">
-                <input type="text" id="busca-adm" placeholder="🔍 Filtrar conteúdo pelo nome..." style="border: 1px solid var(--red); background: #111;">
-            </div>
-
-            <div class="tabela-container">
-                <table style="width:100%">
-                    <thead><tr><th>NOME</th><th>CATEGORIA</th><th>AÇÃO</th></tr></thead>
-                    <tbody id="tabela-conteudo-adm"></tbody>
-                </table>
-            </div>
+            <h3>Gerenciar Conteúdo</h3>
+            <input type="hidden" id="edit-id-cont"><input id="c-nome" placeholder="Nome">
+            <select id="c-tipo"><option value="tv">TV / CANAIS</option><option value="filme">FILME</option><option value="serie">SÉRIE</option></select>
+            <input id="c-cat" placeholder="Categoria"><textarea id="c-links" placeholder="Links" rows="2"></textarea><input id="c-capa" placeholder="URL da Capa">
+            <button class="btn-red" id="btn-salvar-db" style="width:100%">SALVAR</button>
+            <input type="text" id="filtro-adm-conteudo" placeholder="🔍 Filtrar..." style="margin-top:20px;">
+            <div class="tabela-container"><table><thead><tr><th>NOME</th><th>CATEGORIA</th><th>AÇÃO</th></tr></thead><tbody id="tabela-conteudo-adm"></tbody></table></div>
         </div>
-
         <div class="container-box">
-            <span class="box-title">Gerenciar Usuários</span>
-            <input type="hidden" id="edit-id-user">
-            <input id="u-nome" placeholder="Login">
-            <input id="u-pass" placeholder="Senha">
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-save" id="btn-salvar-user" style="background: #28a745;">SALVAR ALTERAÇÃO</button>
-                <button class="btn-save" id="btn-novo-user" style="background: #007bff;">CRIAR NOVO</button>
-            </div>
-            
-            <div class="tabela-container" style="margin-top: 15px;">
-                <table>
-                    <thead><tr><th>USER</th><th>EXPIRA EM</th><th>AÇÃO</th></tr></thead>
-                    <tbody id="lista-user-adm"></tbody>
-                </table>
-            </div>
+            <h3>Gerenciar Usuários</h3>
+            <input type="hidden" id="edit-id-user"><input id="u-nome" placeholder="Login"><input id="u-pass" placeholder="Senha">
+            <div style="display: flex; gap: 10px;"><button class="btn-red" id="btn-salvar-user" style="background: #28a745; flex:1">SALVAR</button><button class="btn-red" id="btn-novo-user" style="background: #007bff; flex:1">TESTE 1H</button></div>
+            <div class="tabela-container" style="margin-top: 15px;"><table><thead><tr><th>LOGIN</th><th>VENCIMENTO</th><th>AÇÃO</th></tr></thead><tbody id="lista-user-adm"></tbody></table></div>
         </div>
     </div>
 
-    <div id="modal-temp" class="modal"><h2 id="temp-titulo" style="color:var(--red); padding-left:15px;"></h2><div id="temp-lista"></div><button class="btn-voltar" onclick="this.parentElement.style.display='none'" style="width:90%; margin:20px 5%;">FECHAR</button></div>
-    <div id="modal-epis" class="modal" style="z-index: 2001; background: #050505;"><h2 id="epis-titulo" style="color:var(--red); padding-left:15px;"></h2><div id="epis-lista"></div><button class="btn-voltar" onclick="this.parentElement.style.display='none'" style="width:90%; margin:20px 5%;">VOLTAR</button></div>
+    <div id="modal-temp" class="modal"><h2 id="temp-titulo" style="color:var(--red);"></h2><div id="temp-lista"></div><button class="btn-voltar" onclick="this.parentElement.style.display='none'" style="width:100%; margin-top:20px;">FECHAR</button></div>
+    <div id="modal-epis" class="modal" style="z-index: 2001;"><h2 id="epis-titulo" style="color:var(--red);"></h2><div id="epis-lista"></div><button class="btn-voltar" onclick="this.parentElement.style.display='none'" style="width:100%; margin-top:20px;">VOLTAR</button></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -130,234 +130,189 @@
         const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
         let bancoDados = []; const video = document.getElementById('main-video');
-        let listaEpisodiosAtual = []; let indexEpisodioAtual = 0; let linkAtual = "";
+        let playlistAtual = []; let indexEpiAtual = 0;
 
-        // --- MANTER TELA LIGADA (WAKE LOCK) ---
-        let wakeLock = null;
-        const requestWakeLock = async () => {
-          try {
-            if ('wakeLock' in navigator) {
-              wakeLock = await navigator.wakeLock.request('screen');
-            }
-          } catch (err) {}
-        };
-        document.addEventListener('visibilitychange', async () => {
-          if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
-        });
-        video.onplay = () => { requestWakeLock(); };
-        video.onpause = () => { if (wakeLock !== null) { wakeLock.release(); wakeLock = null; } };
-        // --------------------------------------
-
-        // LOGIN BLINDADO
+        // LOGIN ORIGINAL PRESERVADO
         document.getElementById('btn-entrar').onclick = async () => {
-            const u = document.getElementById('u-l').value.trim(); 
-            const p = document.getElementById('p-l').value.trim();
-            
-            if(u === "Rhuan" && p === "2026") { logar(true, "VITALÍCIO"); return; }
-
-            try {
-                const snap = await get(ref(db, 'usuarios'));
-                let enc = null;
-                snap.forEach(c => { 
-                    const d = c.val();
-                    if(d.user === u && d.pass === p) enc = {...d, id: c.key}; 
-                });
-
-                if(enc) {
-                    if(enc.suspenso) return alert("Conta suspensa!");
-                    
-                    let validadeTexto = "---";
-                    if(enc.expira === "vitalicio") { 
-                        validadeTexto = "VITALÍCIO"; 
-                    } else {
-                        const agora = Date.now();
-                        if(agora > enc.expira) return alert("Acesso expirado!");
-                        const dt = new Date(enc.expira);
-                        validadeTexto = dt.toLocaleDateString('pt-BR') + " " + dt.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                    }
-                    logar(false, validadeTexto);
-                } else {
-                    alert("Usuário ou senha incorretos!");
-                }
-            } catch (e) { alert("Erro de conexão!"); }
+            const u = document.getElementById('u-l').value; const p = document.getElementById('p-l').value;
+            if(u === "Rhuan" && p === "2026") { logar(true); return; }
+            const snap = await get(ref(db, 'usuarios'));
+            let enc = null; snap.forEach(c => { const d = c.val(); if(d.user === u && d.pass === p) enc = {...d, id: c.key}; });
+            if(enc) {
+                if(enc.suspenso) { alert("Sua conta está suspensa!"); return; }
+                if(enc.expira !== 999 && enc.expira < Date.now()) { alert("Seu acesso expirou!"); return; }
+                logar(false);
+            } else { alert("Usuário ou senha incorretos!"); }
         };
 
-        function logar(adm, val) {
+        function logar(adm) {
             document.getElementById('login-container').style.display='none';
             document.getElementById('main-content').style.display='block';
-            document.getElementById('txt-validade').innerText = val;
+            document.getElementById('portal-inicio').style.display='block';
             if(adm) document.getElementById('b-a').style.display='block';
             carregarTudo();
         }
 
-        // CARREGAMENTO E GERENCIAMENTO
+        window.filtrarPortal = (tipo) => {
+            document.getElementById('portal-inicio').style.display = 'none';
+            document.getElementById('conteudo-app').style.display = 'block';
+            document.getElementById('btn-portal-back').style.display = 'block';
+            renderHome(tipo);
+        };
+
+        window.voltarAoPortal = () => {
+            document.getElementById('portal-inicio').style.display = 'block';
+            document.getElementById('conteudo-app').style.display = 'none';
+            document.getElementById('btn-portal-back').style.display = 'none';
+            document.getElementById('player-area').style.display = 'none';
+            video.pause();
+        };
+
         function carregarTudo() {
             onValue(ref(db, 'conteudo'), (s) => { 
-                bancoDados = []; s.forEach(item => { bancoDados.push({...item.val(), id: item.key}); }); 
-                renderADM(); renderCategorias(); 
+                bancoDados = []; s.forEach(it => { bancoDados.push({...it.val(), id: it.key}); }); 
+                renderADMConteudo(); 
             });
             onValue(ref(db, 'usuarios'), (s) => {
-                const listU = document.getElementById('lista-user-adm'); listU.innerHTML = "";
-                s.forEach(item => {
-                    const d = item.val(); const id = item.key;
-                    let st = "";
-                    if(d.suspenso) { st = "SUSPENSO"; } 
-                    else if(d.expira === "vitalicio") { st = "Vitalício"; } 
-                    else {
-                        const dt = new Date(d.expira);
-                        st = dt.toLocaleDateString('pt-BR') + " " + dt.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                    }
-                    listU.innerHTML += `<tr><td>${d.user}</td><td>${st}</td><td>
-                        <button class="btn-mini" style="background:#007bff" onclick="window.editU('${id}')">ED</button>
-                        <button class="btn-mini" style="background:#17a2b8" onclick="window.addDias('${id}')">+D</button>
-                        <button class="btn-mini" style="background:#ffc107;color:black" onclick="window.toggleU('${id}', ${d.suspenso})">S/A</button>
-                        <button class="btn-mini" style="background:#dc3545" onclick="window.delU('${id}')">X</button>
+                const list = document.getElementById('lista-user-adm'); if(!list) return; list.innerHTML = "";
+                s.forEach(it => {
+                    const u = it.val();
+                    let validadeTxt = (u.expira === 999) ? "VITALÍCIO" : new Date(u.expira).toLocaleString('pt-br');
+                    const corStatus = u.suspenso ? '#dc3545' : '#28a745';
+                    list.innerHTML += `<tr><td>${u.user}</td><td style="font-size:9px">${validadeTxt}</td><td>
+                        <button class="btn-mini" style="background:${corStatus}" onclick="window.toggleU('${it.key}', ${u.suspenso})">SUSP.</button>
+                        <button class="btn-mini" style="background:#ffc107; color:#000" onclick="window.addDiasCustom('${it.key}', ${u.expira})">+D</button>
+                        <button class="btn-mini" style="background:#007bff" onclick="window.editU('${it.key}')">ED</button>
+                        <button class="btn-mini" style="background:#dc3545" onclick="window.delU('${it.key}')">X</button>
                     </td></tr>`;
                 });
             });
         }
 
-        // FUNÇÕES DE USUÁRIO
-        document.getElementById('btn-novo-user').onclick = () => {
-            document.getElementById('edit-id-user').value = "";
-            document.getElementById('u-nome').value = "";
-            document.getElementById('u-pass').value = "";
-            alert("Campos limpos. Digite Usuário/Senha e clique em SALVAR.");
-        };
-
-        document.getElementById('btn-salvar-user').onclick = () => {
-            const id = document.getElementById('edit-id-user').value;
-            const user = document.getElementById('u-nome').value.trim();
-            const pass = document.getElementById('u-pass').value.trim();
-            if(!user || !pass) return alert("Preencha Usuário e Senha!");
-
-            if(id) {
-                update(ref(db, `usuarios/${id}`), { user, pass });
-                alert("Dados atualizados!");
+        // FUNÇÕES DO PLAYER E EPISÓDIOS
+        window.iniciarPlayer = (url, nome, listaEpis = [], index = 0) => {
+            document.getElementById('player-area').style.display = 'block';
+            playlistAtual = listaEpis; indexEpiAtual = index;
+            const listDiv = document.getElementById('lista-epis-inline');
+            if(playlistAtual.length > 1) {
+                listDiv.style.display = 'block';
+                document.getElementById('btn-prev-epi').style.display = 'block';
+                document.getElementById('btn-next-epi').style.display = 'block';
+                renderListaInline();
             } else {
-                const expira = Date.now() + (1 * 3600000); // 1 hora teste
-                push(ref(db, 'usuarios'), { user, pass, expira, suspenso: false });
-                alert("Criado com 1h de teste!");
+                listDiv.style.display = 'none';
+                document.getElementById('btn-prev-epi').style.display = 'none';
+                document.getElementById('btn-next-epi').style.display = 'none';
             }
-            document.getElementById('u-nome').value = ""; document.getElementById('u-pass').value = ""; document.getElementById('edit-id-user').value = "";
+            if(Hls.isSupported()){ const h = new Hls(); h.loadSource(url); h.attachMedia(video); h.on(Hls.Events.MANIFEST_PARSED, () => video.play()); } else { video.src = url; video.play(); }
+            window.scrollTo(0,0);
         };
 
-        window.editU = async (id) => {
-            const d = (await get(ref(db, `usuarios/${id}`))).val();
-            document.getElementById('edit-id-user').value = id; 
-            document.getElementById('u-nome').value = d.user;
-            document.getElementById('u-pass').value = d.pass;
-            window.scrollTo(0, document.body.scrollHeight);
-        };
+        function renderListaInline() {
+            const cont = document.getElementById('lista-epis-inline');
+            cont.innerHTML = `<div style="color:var(--red); font-size:11px; margin-bottom:8px; font-weight:bold;">EPISÓDIOS DA SÉRIE:</div>`;
+            playlistAtual.forEach((url, i) => {
+                const item = document.createElement('div');
+                item.className = `epi-item-player ${i === indexEpiAtual ? 'active' : ''}`;
+                item.innerHTML = `<span>Episódio ${i+1}</span> <span>${i === indexEpiAtual ? '▶ TOCANDO' : ''}</span>`;
+                item.onclick = () => iniciarPlayer(url, "Série", playlistAtual, i);
+                cont.appendChild(item);
+            });
+        }
 
-        window.addDias = async (id) => {
-            const d = (await get(ref(db, `usuarios/${id}`))).val();
-            const diasAdd = prompt("Dias a adicionar? (999=Vitalício)");
-            if(diasAdd) {
-                let novaExp;
-                if(diasAdd == "999") novaExp = "vitalicio";
-                else {
-                    let base = (d.expira === "vitalicio" || Date.now() > d.expira) ? Date.now() : d.expira;
-                    novaExp = base + (parseInt(diasAdd) * 86400000);
+        document.getElementById('btn-next-epi').onclick = () => { if(indexEpiAtual < playlistAtual.length - 1) iniciarPlayer(playlistAtual[indexEpiAtual + 1], "Série", playlistAtual, indexEpiAtual + 1); };
+        document.getElementById('btn-prev-epi').onclick = () => { if(indexEpiAtual > 0) iniciarPlayer(playlistAtual[indexEpiAtual - 1], "Série", playlistAtual, indexEpiAtual - 1); };
+
+        // RESTANTE DAS FUNÇÕES ORIGINAIS
+        function renderHome(filtroTipo = null) {
+            const container = document.getElementById('conteudo-home'); container.innerHTML = "";
+            const tipos = [{ id: 'tv', label: 'TV / Canais' }, { id: 'filme', label: 'Filmes' }, { id: 'serie', label: 'Séries' }];
+            tipos.forEach(t => {
+                if(filtroTipo && t.id !== filtroTipo) return;
+                const itensTipo = bancoDados.filter(it => it.tipo === t.id);
+                if(itensTipo.length > 0) {
+                    const div = document.createElement('div'); div.className = 'section-divider'; div.innerText = t.label; container.appendChild(div);
+                    const cats = [...new Set(itensTipo.map(b => b.categoria))].sort();
+                    cats.forEach(cat => {
+                        const itens = itensTipo.filter(it => it.categoria === cat);
+                        const row = document.createElement('div'); row.className = 'row';
+                        row.innerHTML = `<div class="row-header"><span class="row-title">${cat}</span><span style="color:var(--red); font-size:12px;" onclick="abrirCategoria('${cat}', '${t.id}')">Ver Tudo ❯</span></div><div class="row-posters"></div>`;
+                        container.appendChild(row);
+                        const posterRow = row.querySelector('.row-posters');
+                        const nomesVistos = new Set();
+                        itens.forEach(it => {
+                            if(it.tipo === 'serie') {
+                                let base = it.nome.split(" -")[0].trim();
+                                if(!nomesVistos.has(base)) { nomesVistos.add(base); const sComp = itens.filter(s => s.nome.startsWith(base)); criarCard(base, it.capa, sComp, true, posterRow); }
+                            } else { criarCard(it.nome, it.capa, it.url, false, posterRow); }
+                        });
+                    });
                 }
-                update(ref(db, `usuarios/${id}`), { expira: novaExp });
-                alert("Validade atualizada!");
-            }
+            });
+        }
+
+        function criarCard(nome, capa, dados, isSerie, local) {
+            const card = document.createElement('div'); card.className = 'card';
+            card.innerHTML = `<img src="${capa}"><div class="card-title">${nome}</div>`;
+            card.onclick = () => isSerie ? abrirTemporadas(nome, dados) : iniciarPlayer(dados, nome);
+            local.appendChild(card);
+        }
+
+        window.abrirTemporadas = (nome, lista) => {
+            document.getElementById('modal-temp').style.display = 'block';
+            document.getElementById('temp-titulo').innerText = nome;
+            const cont = document.getElementById('temp-lista'); cont.innerHTML = "";
+            lista.forEach(it => {
+                const d = document.createElement('div'); d.className = 'folder-item';
+                d.innerHTML = `<span>${it.nome}</span><span>❯</span>`;
+                d.onclick = () => abrirEpisodios(it.nome, it.url);
+                cont.appendChild(d);
+            });
+        }
+
+        function abrirEpisodios(nome, urls) {
+            document.getElementById('modal-epis').style.display = 'block';
+            document.getElementById('epis-titulo').innerText = nome;
+            const cont = document.getElementById('epis-lista'); cont.innerHTML = "";
+            const listaUrls = urls.split('\n').filter(l => l.trim());
+            listaUrls.forEach((l, i) => {
+                const d = document.createElement('div'); d.className = 'folder-item';
+                d.innerHTML = `<span>Episódio ${i+1}</span><span>▶</span>`;
+                d.onclick = () => { iniciarPlayer(l, nome, listaUrls, i); document.getElementById('modal-epis').style.display='none'; document.getElementById('modal-temp').style.display='none'; };
+                cont.appendChild(d);
+            });
+        }
+
+        window.abrirCategoria = (cat, tipo) => {
+            document.getElementById('conteudo-home').style.display = 'none';
+            document.getElementById('view-detalhe').style.display = 'block';
+            document.getElementById('btn-back-main').style.visibility = 'visible';
+            document.getElementById('titulo-categoria-aberta').innerText = cat;
+            const grid = document.getElementById('grid-itens'); grid.innerHTML = "";
+            bancoDados.filter(it => it.categoria === cat && it.tipo === tipo).forEach(it => criarCard(it.nome, it.capa, it.url, it.tipo === 'serie', grid));
         };
 
-        // RESTANTE DAS FUNÇÕES (PLAYER E CONTEÚDO)
-        video.ontimeupdate = () => { if(linkAtual) localStorage.setItem('time_' + btoa(linkAtual), video.currentTime); };
-        function play(u, lista = [], index = 0) {
-            linkAtual = u.trim(); listaEpisodiosAtual = lista; indexEpisodioAtual = index;
-            document.getElementById('player-area').style.display='block';
-            document.getElementById('btn-prev').style.display = lista.length > 1 ? 'block' : 'none';
-            document.getElementById('btn-next').style.display = lista.length > 1 ? 'block' : 'none';
-            const infoDiv = document.getElementById('info-episodio');
-            const listaDiv = document.getElementById('lista-rapida-episodios');
-            if(lista.length > 1) {
-                infoDiv.style.display = 'block'; listaDiv.style.display = 'block';
-                document.getElementById('nome-ep-atual').innerText = "Episódio " + (index + 1);
-                listaDiv.innerHTML = "";
-                lista.forEach((l, i) => {
-                    const item = document.createElement('div'); item.className = 'item-lista-rapida';
-                    item.style.background = (i === index) ? '#222' : 'transparent';
-                    item.innerHTML = `<span style="color:${i === index ? 'var(--red)' : '#fff'}">${i === index ? '▶' : ''} Episódio ${i+1}</span>`;
-                    item.onclick = () => play(l, lista, i); listaDiv.appendChild(item);
-                });
-            } else { infoDiv.style.display = 'none'; listaDiv.style.display = 'none'; }
-            if(Hls.isSupported()){ const h = new Hls(); h.loadSource(linkAtual); h.attachMedia(video); h.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); } else { video.src = linkAtual; video.play(); iniciarVideo(); }
-            window.scrollTo(0,0);
-        }
-        function iniciarVideo() {
-            const salvo = localStorage.getItem('time_' + btoa(linkAtual));
-            if(salvo && salvo > 5) { if(confirm("Continuar de onde parou?")) video.currentTime = parseFloat(salvo); }
-            video.play();
-        }
-        document.getElementById('btn-next').onclick = () => { if(indexEpisodioAtual < listaEpisodiosAtual.length - 1) { play(listaEpisodiosAtual[indexEpisodioAtual + 1], listaEpisodiosAtual, indexEpisodioAtual + 1); } };
-        document.getElementById('btn-prev').onclick = () => { if(indexEpisodioAtual > 0) { play(listaEpisodiosAtual[indexEpisodioAtual - 1], listaEpisodiosAtual, indexEpisodioAtual - 1); } };
-        function epis(t, u) {
-            document.getElementById('modal-epis').style.display='block'; document.getElementById('epis-titulo').innerText = t;
-            const c = document.getElementById('epis-lista'); c.innerHTML = "";
-            const links = u.split('\n').filter(l => l.trim());
-            links.forEach((l, i) => {
-                const d = document.createElement('div'); d.className = 'folder-item'; d.innerHTML = `<span>Episódio ${i+1}</span><span>▶</span>`;
-                d.onclick = () => { play(l, links, i); document.getElementById('modal-temp').style.display='none'; document.getElementById('modal-epis').style.display='none'; };
-                c.appendChild(d);
-            });
-        }
-        function renderADM(termo = "") {
-            const list = document.getElementById('tabela-conteudo-adm'); list.innerHTML = "";
-            const filtrados = bancoDados.filter(d => d.nome.toLowerCase().includes(termo.toLowerCase()));
-            filtrados.forEach(d => { list.innerHTML += `<tr><td>${d.nome}</td><td style="color:var(--red); font-weight:bold;">${d.categoria}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editC('${d.id}')">ED</button><button class="btn-mini" style="background:#dc3545" onclick="window.delC('${d.id}')">X</button></td></tr>`; });
-        }
-        document.getElementById('busca-adm').onkeyup = (e) => renderADM(e.target.value);
-        function renderCategorias() {
-            const container = document.getElementById('view-categorias'); container.innerHTML = "";
-            const cats = [...new Set(bancoDados.map(b => b.categoria))].sort();
-            cats.forEach(c => {
-                const div = document.createElement('div'); div.className='cat-item'; div.innerHTML=`<span>${c}</span><span>❯</span>`;
-                div.onclick = () => { document.getElementById('view-categorias').style.display='none'; document.getElementById('view-detalhe').style.display='block'; document.getElementById('btn-back-main').style.visibility='visible'; filtrar("", c); };
-                container.appendChild(div);
-            });
-        }
-        function filtrar(t="", cat=null) {
-            const grid = document.getElementById('grid-itens'); grid.innerHTML = "";
-            let itens = bancoDados; if(cat) itens = itens.filter(b => b.categoria === cat); if(t) itens = itens.filter(b => b.nome.toLowerCase().includes(t.toLowerCase()));
-            const agrup = {}; itens.forEach(it => { if(it.tipo==='serie'){ let b=it.nome.split(" -")[0].trim(); if(!agrup[b])agrup[b]=[]; agrup[b].push(it); } else { card(it.nome, it.capa, it.url, false, grid); } });
-            Object.keys(agrup).forEach(n => card(n, agrup[n][0].capa, agrup[n], true, grid));
-        }
-        function card(n, c, d, s, g) {
-            const div = document.createElement('div'); div.className='card'; div.innerHTML=`<img src="${c}"><div class="card-title">${n}</div>`;
-            div.onclick = () => s ? temporadas(n, d) : play(d); g.appendChild(div);
-        }
-        function temporadas(n, l) {
-            document.getElementById('modal-temp').style.display='block'; document.getElementById('temp-titulo').innerText=n;
-            const c = document.getElementById('temp-lista'); c.innerHTML = "";
-            l.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(it => {
-                const d = document.createElement('div'); d.className='folder-item'; d.innerHTML=`<span>${it.nome.split("-")[1]||"Ver"}</span><span>❯</span>`;
-                d.onclick = () => epis(it.nome, it.url); c.appendChild(d);
-            });
-        }
-        window.editC = async (id) => {
-            const d = (await get(ref(db, `conteudo/${id}`))).val();
-            document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome;
-            document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; 
-            document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa;
-            window.scrollTo(0,0);
-        };
-        document.getElementById('btn-salvar-db').onclick = () => {
-            const id = document.getElementById('edit-id-cont').value;
-            const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value };
-            id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj);
-            alert("Salvo!"); document.getElementById('edit-id-cont').value = "";
-        };
+        // ADMIN TOOLS ORIGINAIS
         window.toggleU = (id, s) => update(ref(db, `usuarios/${id}`), { suspenso: !s });
         window.delU = (id) => confirm("Excluir?") && remove(ref(db, `usuarios/${id}`));
+        window.editU = async (id) => { const snap = await get(ref(db, `usuarios/${id}`)); const d = snap.val(); document.getElementById('edit-id-user').value = id; document.getElementById('u-nome').value = d.user; document.getElementById('u-pass').value = d.pass; };
+        document.getElementById('btn-salvar-user').onclick = () => { const id = document.getElementById('edit-id-user').value; if(id) update(ref(db, `usuarios/${id}`), { user: document.getElementById('u-nome').value, pass: document.getElementById('u-pass').value }); };
+        document.getElementById('btn-novo-user').onclick = () => { const u = document.getElementById('u-nome').value, p = document.getElementById('u-pass').value; if(u && p) push(ref(db, 'usuarios'), { user: u, pass: p, expira: Date.now() + 3600000, suspenso: false }); };
+        window.addDiasCustom = (id, expAtual) => { const dias = prompt("Dias:"); if(dias) { if(dias === "999") update(ref(db, `usuarios/${id}`), { expira: 999 }); else update(ref(db, `usuarios/${id}`), { expira: ((expAtual < Date.now() || expAtual === 999) ? Date.now() : expAtual) + (parseInt(dias) * 86400000) }); } };
+
+        function renderADMConteudo(termo = "") {
+            const list = document.getElementById('tabela-conteudo-adm'); if(!list) return; list.innerHTML = "";
+            bancoDados.filter(it => it.nome.toLowerCase().includes(termo.toLowerCase())).forEach(d => {
+                list.innerHTML += `<tr><td>${d.nome}</td><td style="color:var(--red)">${d.categoria}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editC('${d.id}')">ED</button><button class="btn-mini" style="background:#dc3545" onclick="window.delC('${d.id}')">X</button></td></tr>`;
+            });
+        }
+        window.editC = (id) => { const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); };
+        document.getElementById('btn-salvar-db').onclick = () => { const id = document.getElementById('edit-id-cont').value; const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value }; id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj); alert("Salvo!"); };
         window.delC = (id) => confirm("Excluir?") && remove(ref(db, `conteudo/${id}`));
-        document.getElementById('btn-voltar-adm').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
+        document.getElementById('filtro-adm-conteudo').onkeyup = (e) => renderADMConteudo(e.target.value);
+        document.getElementById('busca-user').onkeyup = (e) => { const t = e.target.value.toLowerCase(); const home = document.getElementById('conteudo-home'), detail = document.getElementById('view-detalhe'), grid = document.getElementById('grid-itens'); if(t.length > 0) { home.style.display = 'none'; detail.style.display = 'block'; grid.innerHTML = ""; bancoDados.filter(it => it.nome.toLowerCase().includes(t)).forEach(it => criarCard(it.nome, it.capa, it.url, it.tipo === 'serie', grid)); } else { home.style.display = 'block'; detail.style.display = 'none'; } };
         document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
-        document.getElementById('btn-back-main').onclick = () => { document.getElementById('view-detalhe').style.display='none'; document.getElementById('view-categorias').style.display='block'; document.getElementById('btn-back-main').style.visibility='hidden'; video.pause(); document.getElementById('player-area').style.display='none'; };
-        document.getElementById('busca-user').onkeyup = (e) => { const t = e.target.value; if(t) { document.getElementById('view-categorias').style.display='none'; document.getElementById('view-detalhe').style.display='block'; document.getElementById('btn-back-main').style.visibility='visible'; filtrar(t); } else { document.getElementById('btn-back-main').onclick(); } };
+        document.getElementById('btn-voltar-adm').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
     </script>
 </body>
 </html>

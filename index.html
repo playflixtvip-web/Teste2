@@ -29,20 +29,10 @@
         .card { flex: 0 0 auto; width: 110px; border-radius: 4px; overflow: hidden; cursor: pointer; background: var(--card); border: 1px solid #222; }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
         
-        /* Ajuste para não cortar o nome do filme */
         .card-title { 
-            font-size: 11px; 
-            padding: 6px 5px; 
-            text-align: center; 
-            color: #fff; 
-            font-weight: 500;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: normal;
-            height: 32px;
+            font-size: 11px; padding: 6px 5px; text-align: center; color: #fff; font-weight: 500;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; text-overflow: ellipsis; white-space: normal; height: 32px;
         }
 
         #player-area { width: 100%; background: #000; position: sticky; top: 60px; z-index: 900; display: none; border-bottom: 2px solid var(--red); }
@@ -123,7 +113,10 @@
             <input type="hidden" id="edit-id-cont"><input id="c-nome" placeholder="Nome">
             <select id="c-tipo"><option value="tv">TV / CANAIS</option><option value="filme">FILME</option><option value="serie">SÉRIE</option></select>
             <input id="c-cat" placeholder="Categoria"><textarea id="c-links" placeholder="Links" rows="2"></textarea><input id="c-capa" placeholder="URL da Capa">
-            <button class="btn-red" id="btn-salvar-db" style="width:100%">SALVAR</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-red" id="btn-salvar-db" style="flex:2">SALVAR / ATUALIZAR</button>
+                <button class="btn-red" id="btn-limpar-db" style="background:#007bff; flex:1">NOVO</button>
+            </div>
             <input type="text" id="filtro-adm-conteudo" placeholder="🔍 Filtrar..." style="margin-top:20px;">
             <div class="tabela-container"><table><thead><tr><th>NOME</th><th>CATEGORIA</th><th>AÇÃO</th></tr></thead><tbody id="tabela-conteudo-adm"></tbody></table></div>
         </div>
@@ -207,12 +200,9 @@
 
         window.iniciarPlayer = (url, nome, listaEpis = [], index = 0) => {
             linkAtual = url.split('\n')[0].trim();
-            playlistAtual = listaEpis; 
-            indexEpiAtual = index;
-
+            playlistAtual = listaEpis; indexEpiAtual = index;
             document.getElementById('player-area').style.display = 'block';
             const listDiv = document.getElementById('lista-epis-inline');
-            
             if(playlistAtual.length > 1) {
                 listDiv.style.display = 'block';
                 document.getElementById('btn-prev-epi').style.display = 'block';
@@ -223,18 +213,11 @@
                 document.getElementById('btn-prev-epi').style.display = 'none';
                 document.getElementById('btn-next-epi').style.display = 'none';
             }
-
             if(hls) { hls.destroy(); hls = null; }
-
             if(Hls.isSupported()){ 
-                hls = new Hls(); 
-                hls.loadSource(linkAtual); 
-                hls.attachMedia(video); 
-                hls.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); 
+                hls = new Hls(); hls.loadSource(linkAtual); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); 
             } else { 
-                video.src = linkAtual; 
-                video.play(); 
-                iniciarVideo();
+                video.src = linkAtual; video.play(); iniciarVideo();
             }
             window.scrollTo(0,0);
         };
@@ -341,8 +324,33 @@
                 list.innerHTML += `<tr><td>${d.nome}</td><td style="color:var(--red)">${d.categoria}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editC('${d.id}')">ED</button><button class="btn-mini" style="background:#dc3545" onclick="window.delC('${d.id}')">X</button></td></tr>`;
             });
         }
-        window.editC = (id) => { const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); };
-        document.getElementById('btn-salvar-db').onclick = () => { const id = document.getElementById('edit-id-cont').value; const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value }; id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj); alert("Salvo!"); };
+        window.editC = (id) => { 
+            const d = bancoDados.find(b => b.id === id); 
+            document.getElementById('edit-id-cont').value = id; 
+            document.getElementById('c-nome').value = d.nome; 
+            document.getElementById('c-tipo').value = d.tipo; 
+            document.getElementById('c-cat').value = d.categoria; 
+            document.getElementById('c-links').value = d.url; 
+            document.getElementById('c-capa').value = d.capa; 
+            window.scrollTo(0,0); 
+        };
+        
+        document.getElementById('btn-limpar-db').onclick = () => {
+            document.getElementById('edit-id-cont').value = ""; 
+            document.getElementById('c-nome').value = ""; 
+            document.getElementById('c-cat').value = ""; 
+            document.getElementById('c-links').value = ""; 
+            document.getElementById('c-capa').value = "";
+            alert("Campos limpos para novo cadastro!");
+        };
+
+        document.getElementById('btn-salvar-db').onclick = () => { 
+            const id = document.getElementById('edit-id-cont').value; 
+            const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value }; 
+            id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj); 
+            alert("Sucesso!"); 
+        };
+
         window.delC = (id) => confirm("Excluir?") && remove(ref(db, `conteudo/${id}`));
         document.getElementById('filtro-adm-conteudo').onkeyup = (e) => renderADMConteudo(e.target.value);
         document.getElementById('busca-user').onkeyup = (e) => { const t = e.target.value.toLowerCase(); const home = document.getElementById('conteudo-home'), detail = document.getElementById('view-detalhe'), grid = document.getElementById('grid-itens'); if(t.length > 0) { home.style.display = 'none'; detail.style.display = 'block'; grid.innerHTML = ""; bancoDados.filter(it => it.nome.toLowerCase().includes(t)).forEach(it => criarCard(it.nome, it.capa, it.url, it.tipo === 'serie', grid)); } else { home.style.display = 'block'; detail.style.display = 'none'; } };

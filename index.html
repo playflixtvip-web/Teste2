@@ -308,7 +308,20 @@
             document.getElementById('btn-back-main').style.visibility = 'visible';
             document.getElementById('titulo-categoria-aberta').innerText = cat;
             const grid = document.getElementById('grid-itens'); grid.innerHTML = "";
-            bancoDados.filter(it => it.categoria === cat && it.tipo === tipo).forEach(it => criarCard(it.nome, it.capa, it.url, it.tipo === 'serie', grid));
+            const itensFiltrados = bancoDados.filter(it => it.categoria === cat && it.tipo === tipo);
+            const nomesVistos = new Set();
+            itensFiltrados.forEach(it => {
+                if(it.tipo === 'serie') {
+                    let base = it.nome.split(" -")[0].trim();
+                    if(!nomesVistos.has(base)) { 
+                        nomesVistos.add(base); 
+                        const sComp = itensFiltrados.filter(s => s.nome.startsWith(base)); 
+                        criarCard(base, it.capa, sComp, true, grid); 
+                    }
+                } else {
+                    criarCard(it.nome, it.capa, it.url, false, grid);
+                }
+            });
         };
 
         window.toggleU = (id, s) => update(ref(db, `usuarios/${id}`), { suspenso: !s });

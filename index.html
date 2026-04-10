@@ -6,7 +6,7 @@
     <title>CLONEFLIX VIP</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --bg: #0b0b0b; --red: #E50914; --card: #141414; --text: #fff; --border: #222; }
+        :root { --bg: #0b0b0b; --red: #E50914; --card: #141414; --text: #fff; --border: #222; --yellow: #ffcc00; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         
         header { position: fixed; top: 0; width: 100%; height: 60px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%); display: flex; align-items: center; padding: 0 15px; z-index: 1000; justify-content: space-between; box-sizing: border-box; }
@@ -26,14 +26,15 @@
         .row-posters { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; }
         .row-posters::-webkit-scrollbar { display: none; }
 
-        .card { flex: 0 0 auto; width: 110px; border-radius: 4px; overflow: hidden; cursor: pointer; background: var(--card); border: 1px solid #222; }
+        .card { flex: 0 0 auto; width: 110px; border-radius: 4px; overflow: hidden; cursor: pointer; background: var(--card); border: 1px solid #222; position: relative; transition: 0.2s; }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
-        
         .card-title { 
             font-size: 11px; padding: 6px 5px; text-align: center; color: #fff; font-weight: 500;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
             overflow: hidden; text-overflow: ellipsis; white-space: normal; height: 32px;
         }
+        .card.em-andamento { border: 2px solid var(--yellow); box-shadow: 0 0 10px rgba(255, 204, 0, 0.3); }
+        .badge-continuar { position: absolute; top: 5px; right: 5px; background: var(--yellow); color: #000; font-size: 8px; font-weight: 900; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; }
 
         #player-area { width: 100%; background: #000; position: sticky; top: 60px; z-index: 900; display: none; border-bottom: 2px solid var(--red); }
         .player-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; }
@@ -43,6 +44,7 @@
         .list-epis-player { background: #000; max-height: 200px; overflow-y: auto; padding: 10px; border-top: 1px solid #222; display: none; }
         .epi-item-player { padding: 12px; border-bottom: 1px solid #222; font-size: 13px; display: flex; justify-content: space-between; cursor: pointer; }
         .epi-item-player.active { color: var(--red); font-weight: bold; background: #111; }
+        .epi-item-player.assistido { border-right: 4px solid var(--yellow); }
 
         .container-box { background: var(--card); border-radius: 12px; padding: 20px; margin: 15px; border: 1px solid var(--border); }
         input, textarea, select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; }
@@ -53,6 +55,14 @@
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 2000; padding: 20px; overflow-y: auto; }
         .folder-item { background: #1a1a1a; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid var(--red); cursor: pointer; display: flex; justify-content: space-between; font-weight: bold; }
+        .folder-item.progresso-yellow { border-right: 4px solid var(--yellow); }
+
+        #modal-info { display: none; position: fixed; inset: 0; background: #000; z-index: 3000; overflow-y: auto; }
+        .info-capa-bg { width: 100%; height: 40vh; background-size: cover; background-position: center; position: relative; }
+        .info-capa-bg::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, #000, transparent); }
+        .info-content { padding: 20px; position: relative; margin-top: -50px; }
+        .info-titulo { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
+        .info-sinopse { font-size: 14px; color: #ccc; line-height: 1.5; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -91,11 +101,10 @@
                 <div class="player-nav">
                     <button class="btn-voltar" id="btn-prev-epi" style="flex:1; margin-right:5px; display:none;">⏮ ANTERIOR</button>
                     <button class="btn-voltar" id="btn-next-epi" style="flex:1; margin-right:5px; display:none;">PRÓXIMO ⏭</button>
-                    <button class="btn-voltar" onclick="document.getElementById('player-area').style.display='none'; document.getElementById('main-video').pause();" style="background:var(--red)">FECHAR</button>
+                    <button class="btn-voltar" onclick="fecharPlayer()" style="background:var(--red)">FECHAR</button>
                 </div>
                 <div id="lista-epis-inline" class="list-epis-player"></div>
             </div>
-
             <div style="padding: 15px 15px 0 15px;"><input type="text" id="busca-user" placeholder="🔍 Buscar títulos..."></div>
             <div id="conteudo-home"></div>
             <div id="view-detalhe" style="display: none;">
@@ -106,13 +115,29 @@
         </div>
     </div>
 
+    <div id="modal-info">
+        <div class="info-capa-bg" id="info-bg">
+             <button class="btn-voltar" onclick="document.getElementById('modal-info').style.display='none'" style="position:absolute; top:20px; left:20px; background: rgba(0,0,0,0.6);">✕</button>
+        </div>
+        <div class="info-content">
+            <div class="info-titulo" id="info-titulo">Título</div>
+            <div class="info-sinopse" id="info-sinopse">Sinopse aqui...</div>
+            <button class="btn-red" id="btn-info-play" style="width:100%; padding: 15px; font-size: 16px; margin-bottom: 10px;">▶ ASSISTIR AGORA</button>
+            <button class="btn-voltar" onclick="document.getElementById('modal-info').style.display='none'" style="width:100%; padding: 15px; background:#333;">VOLTAR</button>
+        </div>
+    </div>
+
     <div id="admin-panel" style="display: none; padding-top: 20px; background: #000; min-height: 100vh;">
         <div style="padding: 0 15px;"><button class="btn-voltar" id="btn-voltar-adm">← VOLTAR AO APP</button></div>
         <div class="container-box">
             <h3>Gerenciar Conteúdo</h3>
+            <p style="font-size: 10px; color: #888; margin-top: -10px;">Dica: Para nomear episódios use: Nome | Link</p>
             <input type="hidden" id="edit-id-cont"><input id="c-nome" placeholder="Nome">
             <select id="c-tipo"><option value="tv">TV / CANAIS</option><option value="filme">FILME</option><option value="serie">SÉRIE</option></select>
-            <input id="c-cat" placeholder="Categoria"><textarea id="c-links" placeholder="Links" rows="2"></textarea><input id="c-capa" placeholder="URL da Capa">
+            <input id="c-cat" placeholder="Categoria">
+            <textarea id="c-sinopse" placeholder="Sinopse do Conteúdo" rows="3"></textarea>
+            <textarea id="c-links" placeholder="Links (um por linha)" rows="2"></textarea>
+            <input id="c-capa" placeholder="URL da Capa">
             <div style="display: flex; gap: 10px;">
                 <button class="btn-red" id="btn-salvar-db" style="flex:2">SALVAR / ATUALIZAR</button>
                 <button class="btn-red" id="btn-limpar-db" style="background:#007bff; flex:1">NOVO</button>
@@ -139,6 +164,16 @@
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
         let bancoDados = []; const video = document.getElementById('main-video');
         let playlistAtual = []; let indexEpiAtual = 0; let linkAtual = ""; let hls = null;
+        let tipoAtualAberto = null;
+
+        // Função para tratar links que podem ter nomes
+        const tratarLink = (linha, index) => {
+            if (linha.includes('|')) {
+                const partes = linha.split('|');
+                return { nome: partes[0].trim(), url: partes[1].trim() };
+            }
+            return { nome: `Episódio ${index + 1}`, url: linha.trim() };
+        };
 
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('u-l').value; const p = document.getElementById('p-l').value;
@@ -161,6 +196,7 @@
         }
 
         window.filtrarPortal = (tipo) => {
+            tipoAtualAberto = tipo;
             document.getElementById('portal-inicio').style.display = 'none';
             document.getElementById('conteudo-app').style.display = 'block';
             document.getElementById('btn-portal-back').style.display = 'block';
@@ -198,8 +234,15 @@
 
         video.ontimeupdate = () => { if(linkAtual) localStorage.setItem('time_' + btoa(linkAtual), video.currentTime); };
 
-        window.iniciarPlayer = (url, nome, listaEpis = [], index = 0) => {
-            linkAtual = url.split('\n')[0].trim();
+        window.fecharPlayer = () => {
+            document.getElementById('player-area').style.display = 'none';
+            video.pause();
+            renderHome(tipoAtualAberto);
+        };
+
+        window.iniciarPlayer = (urlBruta, nome, listaEpis = [], index = 0) => {
+            const dadosEpi = tratarLink(urlBruta, index);
+            linkAtual = dadosEpi.url;
             playlistAtual = listaEpis; indexEpiAtual = index;
             document.getElementById('player-area').style.display = 'block';
             const listDiv = document.getElementById('lista-epis-inline');
@@ -233,12 +276,14 @@
 
         function renderListaInline() {
             const cont = document.getElementById('lista-epis-inline');
-            cont.innerHTML = `<div style="color:var(--red); font-size:11px; margin-bottom:8px; font-weight:bold;">EPISÓDIOS DA SÉRIE:</div>`;
-            playlistAtual.forEach((url, i) => {
+            cont.innerHTML = `<div style="color:var(--red); font-size:11px; margin-bottom:8px; font-weight:bold;">EPISÓDIOS:</div>`;
+            playlistAtual.forEach((urlLinha, i) => {
+                const epi = tratarLink(urlLinha, i);
+                const tempo = localStorage.getItem('time_' + btoa(epi.url));
                 const item = document.createElement('div');
-                item.className = `epi-item-player ${i === indexEpiAtual ? 'active' : ''}`;
-                item.innerHTML = `<span>Episódio ${i+1}</span> <span>${i === indexEpiAtual ? '▶ TOCANDO' : ''}</span>`;
-                item.onclick = () => iniciarPlayer(url, "Série", playlistAtual, i);
+                item.className = `epi-item-player ${i === indexEpiAtual ? 'active' : ''} ${tempo > 5 ? 'assistido' : ''}`;
+                item.innerHTML = `<span>${epi.nome}</span> <span>${i === indexEpiAtual ? '▶ TOCANDO' : (tempo > 5 ? '● RECOMEÇAR' : '')}</span>`;
+                item.onclick = () => iniciarPlayer(urlLinha, "Série", playlistAtual, i);
                 cont.appendChild(item);
             });
         }
@@ -262,27 +307,55 @@
                         itens.forEach(it => {
                             if(it.tipo === 'serie') {
                                 let base = it.nome.split(" -")[0].trim();
-                                if(!nomesVistos.has(base)) { nomesVistos.add(base); const sComp = itens.filter(s => s.nome.startsWith(base)); criarCard(base, it.capa, sComp, true, posterRow); }
-                            } else { criarCard(it.nome, it.capa, it.url, false, posterRow); }
+                                if(!nomesVistos.has(base)) { nomesVistos.add(base); const sComp = itens.filter(s => s.nome.startsWith(base)); criarCard(it, sComp, true, posterRow); }
+                            } else { criarCard(it, it.url, false, posterRow); }
                         });
                     });
                 }
             });
         }
 
-        function criarCard(nome, capa, dados, isSerie, local) {
-            const card = document.createElement('div'); card.className = 'card';
-            card.innerHTML = `<img src="${capa}"><div class="card-title">${nome}</div>`;
-            card.onclick = () => isSerie ? abrirTemporadas(nome, dados) : iniciarPlayer(dados, nome);
+        function criarCard(itemData, dados, isSerie, local) {
+            const card = document.createElement('div');
+            let hasProgress = false;
+            if(isSerie) {
+                dados.forEach(temp => {
+                    temp.url.split('\n').forEach((linha, idx) => { 
+                        const epi = tratarLink(linha, idx);
+                        if(localStorage.getItem('time_' + btoa(epi.url)) > 5) hasProgress = true; 
+                    });
+                });
+            } else {
+                const epi = tratarLink(itemData.url, 0);
+                if(localStorage.getItem('time_' + btoa(epi.url)) > 5) hasProgress = true;
+            }
+            card.className = `card ${hasProgress ? 'em-andamento' : ''}`;
+            card.innerHTML = `${hasProgress ? '<div class="badge-continuar">Continuar</div>' : ''}<img src="${itemData.capa}"><div class="card-title">${isSerie ? itemData.nome.split(" -")[0].trim() : itemData.nome}</div>`;
+            card.onclick = () => abrirInfo(itemData, dados, isSerie);
             local.appendChild(card);
         }
+
+        window.abrirInfo = (item, dados, isSerie) => {
+            const modal = document.getElementById('modal-info');
+            document.getElementById('info-bg').style.backgroundImage = `url(${item.capa})`;
+            document.getElementById('info-titulo').innerText = isSerie ? item.nome.split(" -")[0].trim() : item.nome;
+            document.getElementById('info-sinopse').innerText = item.sinopse || "Nenhuma sinopse disponível.";
+            const btnPlay = document.getElementById('btn-info-play');
+            btnPlay.onclick = () => { modal.style.display = 'none'; isSerie ? abrirTemporadas(item.nome.split(" -")[0].trim(), dados) : iniciarPlayer(dados, item.nome); };
+            modal.style.display = 'block';
+        };
 
         window.abrirTemporadas = (nome, lista) => {
             document.getElementById('modal-temp').style.display = 'block';
             document.getElementById('temp-titulo').innerText = nome;
             const cont = document.getElementById('temp-lista'); cont.innerHTML = "";
             lista.forEach(it => {
-                const d = document.createElement('div'); d.className = 'folder-item';
+                let tempProgress = false;
+                it.url.split('\n').forEach((linha, idx) => { 
+                    const epi = tratarLink(linha, idx);
+                    if(localStorage.getItem('time_' + btoa(epi.url)) > 5) tempProgress = true; 
+                });
+                const d = document.createElement('div'); d.className = `folder-item ${tempProgress ? 'progresso-yellow' : ''}`;
                 d.innerHTML = `<span>${it.nome}</span><span>❯</span>`;
                 d.onclick = () => abrirEpisodios(it.nome, it.url);
                 cont.appendChild(d);
@@ -293,11 +366,14 @@
             document.getElementById('modal-epis').style.display = 'block';
             document.getElementById('epis-titulo').innerText = nome;
             const cont = document.getElementById('epis-lista'); cont.innerHTML = "";
-            const listaUrls = urls.split('\n').filter(l => l.trim());
-            listaUrls.forEach((l, i) => {
-                const d = document.createElement('div'); d.className = 'folder-item';
-                d.innerHTML = `<span>Episódio ${i+1}</span><span>▶</span>`;
-                d.onclick = () => { iniciarPlayer(l, nome, listaUrls, i); document.getElementById('modal-epis').style.display='none'; document.getElementById('modal-temp').style.display='none'; };
+            const listaLinhas = urls.split('\n').filter(l => l.trim());
+            listaLinhas.forEach((linha, i) => {
+                const epi = tratarLink(linha, i);
+                const hasEpiProg = localStorage.getItem('time_' + btoa(epi.url)) > 5;
+                const d = document.createElement('div'); 
+                d.className = `folder-item ${hasEpiProg ? 'progresso-yellow' : ''}`;
+                d.innerHTML = `<span>${epi.nome}</span><span>${hasEpiProg ? '🕒' : '▶'}</span>`;
+                d.onclick = () => { iniciarPlayer(linha, nome, listaLinhas, i); document.getElementById('modal-epis').style.display='none'; document.getElementById('modal-temp').style.display='none'; };
                 cont.appendChild(d);
             });
         }
@@ -308,24 +384,13 @@
             document.getElementById('btn-back-main').style.visibility = 'visible';
             document.getElementById('titulo-categoria-aberta').innerText = cat;
             const grid = document.getElementById('grid-itens'); grid.innerHTML = "";
-            
             const itensFiltrados = bancoDados.filter(it => it.categoria === cat && it.tipo === tipo);
             const nomesVistos = new Set();
-
             itensFiltrados.forEach(it => {
                 if(it.tipo === 'serie') {
-                    // Agrupa pelo nome base (ex: Peaky Blinders)
                     let base = it.nome.split(" -")[0].trim();
-                    if(!nomesVistos.has(base)) { 
-                        nomesVistos.add(base); 
-                        // Pega todas as temporadas dessa série específica para o modal
-                        const sComp = itensFiltrados.filter(s => s.nome.startsWith(base)); 
-                        criarCard(base, it.capa, sComp, true, grid); 
-                    }
-                } else {
-                    // Filmes e Canais aparecem normal
-                    criarCard(it.nome, it.capa, it.url, false, grid);
-                }
+                    if(!nomesVistos.has(base)) { nomesVistos.add(base); const sComp = itensFiltrados.filter(s => s.nome.startsWith(base)); criarCard(it, sComp, true, grid); }
+                } else { criarCard(it, it.url, false, grid); }
             });
         };
 
@@ -343,35 +408,13 @@
             });
         }
         window.editC = (id) => { 
-            const d = bancoDados.find(b => b.id === id); 
-            document.getElementById('edit-id-cont').value = id; 
-            document.getElementById('c-nome').value = d.nome; 
-            document.getElementById('c-tipo').value = d.tipo; 
-            document.getElementById('c-cat').value = d.categoria; 
-            document.getElementById('c-links').value = d.url; 
-            document.getElementById('c-capa').value = d.capa; 
-            window.scrollTo(0,0); 
+            const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-sinopse').value = d.sinopse || ""; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); 
         };
-        
-        document.getElementById('btn-limpar-db').onclick = () => {
-            document.getElementById('edit-id-cont').value = ""; 
-            document.getElementById('c-nome').value = ""; 
-            document.getElementById('c-cat').value = ""; 
-            document.getElementById('c-links').value = ""; 
-            document.getElementById('c-capa').value = "";
-            alert("Campos limpos para novo cadastro!");
-        };
-
-        document.getElementById('btn-salvar-db').onclick = () => { 
-            const id = document.getElementById('edit-id-cont').value; 
-            const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value }; 
-            id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj); 
-            alert("Sucesso!"); 
-        };
-
+        document.getElementById('btn-limpar-db').onclick = () => { document.getElementById('edit-id-cont').value = ""; document.getElementById('c-nome').value = ""; document.getElementById('c-cat').value = ""; document.getElementById('c-sinopse').value = ""; document.getElementById('c-links').value = ""; document.getElementById('c-capa').value = ""; alert("Campos limpos!"); };
+        document.getElementById('btn-salvar-db').onclick = () => { const id = document.getElementById('edit-id-cont').value; const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), sinopse: document.getElementById('c-sinopse').value, url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value }; id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj); alert("Sucesso!"); };
         window.delC = (id) => confirm("Excluir?") && remove(ref(db, `conteudo/${id}`));
         document.getElementById('filtro-adm-conteudo').onkeyup = (e) => renderADMConteudo(e.target.value);
-        document.getElementById('busca-user').onkeyup = (e) => { const t = e.target.value.toLowerCase(); const home = document.getElementById('conteudo-home'), detail = document.getElementById('view-detalhe'), grid = document.getElementById('grid-itens'); if(t.length > 0) { home.style.display = 'none'; detail.style.display = 'block'; grid.innerHTML = ""; bancoDados.filter(it => it.nome.toLowerCase().includes(t)).forEach(it => criarCard(it.nome, it.capa, it.url, it.tipo === 'serie', grid)); } else { home.style.display = 'block'; detail.style.display = 'none'; } };
+        document.getElementById('busca-user').onkeyup = (e) => { const t = e.target.value.toLowerCase(); const home = document.getElementById('conteudo-home'), detail = document.getElementById('view-detalhe'), grid = document.getElementById('grid-itens'); if(t.length > 0) { home.style.display = 'none'; detail.style.display = 'block'; grid.innerHTML = ""; bancoDados.filter(it => it.nome.toLowerCase().includes(t)).forEach(it => criarCard(it, it.url, it.tipo === 'serie', grid)); } else { home.style.display = 'block'; detail.style.display = 'none'; } };
         document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
         document.getElementById('btn-voltar-adm').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
     </script>

@@ -308,17 +308,22 @@
             document.getElementById('btn-back-main').style.visibility = 'visible';
             document.getElementById('titulo-categoria-aberta').innerText = cat;
             const grid = document.getElementById('grid-itens'); grid.innerHTML = "";
+            
             const itensFiltrados = bancoDados.filter(it => it.categoria === cat && it.tipo === tipo);
             const nomesVistos = new Set();
+
             itensFiltrados.forEach(it => {
                 if(it.tipo === 'serie') {
+                    // Agrupa pelo nome base (ex: Peaky Blinders)
                     let base = it.nome.split(" -")[0].trim();
                     if(!nomesVistos.has(base)) { 
                         nomesVistos.add(base); 
+                        // Pega todas as temporadas dessa série específica para o modal
                         const sComp = itensFiltrados.filter(s => s.nome.startsWith(base)); 
                         criarCard(base, it.capa, sComp, true, grid); 
                     }
                 } else {
+                    // Filmes e Canais aparecem normal
                     criarCard(it.nome, it.capa, it.url, false, grid);
                 }
             });

@@ -14,6 +14,8 @@
         .btn-voltar { background: #2a2a2a; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .btn-red { background: var(--red); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
 
+        .user-validade { font-size: 10px; color: var(--yellow); font-weight: bold; text-align: right; line-height: 1.2; }
+
         #portal-inicio { display: none; padding: 80px 20px 20px; text-align: center; min-height: 100vh; box-sizing: border-box; }
         .grid-portal { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 500px; margin: 0 auto; }
         .btn-portal { background: linear-gradient(45deg, #141414, #222); border: 2px solid #333; border-radius: 15px; padding: 40px 20px; color: white; font-size: 24px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
@@ -78,11 +80,17 @@
 
     <div id="main-content" style="display:none; padding-top: 60px;">
         <header>
-            <button class="btn-voltar" id="btn-portal-back" style="display:none" onclick="voltarAoPortal()">← INÍCIO</button>
-            <div class="logo">CLONEFLIX</div>
-            <div style="display:flex; gap:5px;">
-                <button id="b-a" class="btn-red" style="display:none; padding: 6px 10px;">ADM</button>
-                <button class="btn-voltar" onclick="location.reload()" style="padding: 6px 10px;">SAIR</button>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button class="btn-voltar" id="btn-portal-back" style="display:none" onclick="voltarAoPortal()">← INÍCIO</button>
+                <div class="logo">CLONEFLIX</div>
+            </div>
+            
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div id="display-validade" class="user-validade"></div>
+                <div style="display:flex; gap:5px;">
+                    <button id="b-a" class="btn-red" style="display:none; padding: 6px 10px;">ADM</button>
+                    <button class="btn-voltar" onclick="location.reload()" style="padding: 6px 10px;">SAIR</button>
+                </div>
             </div>
         </header>
 
@@ -131,7 +139,6 @@
         <div style="padding: 0 15px;"><button class="btn-voltar" id="btn-voltar-adm">← VOLTAR AO APP</button></div>
         <div class="container-box">
             <h3>Gerenciar Conteúdo</h3>
-            <p style="font-size: 10px; color: #888; margin-top: -10px;">Dica: Para nomear episódios use: Nome | Link</p>
             <input type="hidden" id="edit-id-cont"><input id="c-nome" placeholder="Nome">
             <select id="c-tipo"><option value="tv">TV / CANAIS</option><option value="filme">FILME</option><option value="serie">SÉRIE</option></select>
             <input id="c-cat" placeholder="Categoria">
@@ -166,7 +173,6 @@
         let playlistAtual = []; let indexEpiAtual = 0; let linkAtual = ""; let hls = null;
         let tipoAtualAberto = null;
 
-        // Função para tratar links que podem ter nomes
         const tratarLink = (linha, index) => {
             if (linha.includes('|')) {
                 const partes = linha.split('|');
@@ -175,14 +181,32 @@
             return { nome: `Episódio ${index + 1}`, url: linha.trim() };
         };
 
+        // Lógica de progresso: Só mostra o marcador se assistiu entre 5s e 95% do total
+        function deveMostrarContinuar(url) {
+            const salvo = localStorage.getItem('time_' + btoa(url));
+            const total = localStorage.getItem('total_' + btoa(url));
+            if (!salvo || parseFloat(salvo) <= 5) return false;
+            if (total) {
+                const perc = (parseFloat(salvo) / parseFloat(total)) * 100;
+                if (perc >= 95) return false; 
+            }
+            return true;
+        }
+
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('u-l').value; const p = document.getElementById('p-l').value;
-            if(u === "Rhuan" && p === "2026") { logar(true); return; }
+            if(u === "Rhuan" && p === "2026") { 
+                document.getElementById('display-validade').innerHTML = "MODO<br>ADMIN";
+                logar(true); 
+                return; 
+            }
             const snap = await get(ref(db, 'usuarios'));
             let enc = null; snap.forEach(c => { const d = c.val(); if(d.user === u && d.pass === p) enc = {...d, id: c.key}; });
             if(enc) {
                 if(enc.suspenso) { alert("Sua conta está suspensa!"); return; }
                 if(enc.expira !== 999 && enc.expira < Date.now()) { alert("Seu acesso expirou!"); return; }
+                let dataVal = (enc.expira === 999) ? "ACESSO<br>VITALÍCIO" : `VENCE DIA:<br>${new Date(enc.expira).toLocaleDateString('pt-br')}`;
+                document.getElementById('display-validade').innerHTML = dataVal;
                 logar(false);
             } else { alert("Usuário ou senha incorretos!"); }
         };
@@ -232,7 +256,12 @@
             });
         }
 
-        video.ontimeupdate = () => { if(linkAtual) localStorage.setItem('time_' + btoa(linkAtual), video.currentTime); };
+        video.ontimeupdate = () => { 
+            if(linkAtual && video.currentTime > 5) {
+                localStorage.setItem('time_' + btoa(linkAtual), video.currentTime);
+                if(video.duration) localStorage.setItem('total_' + btoa(linkAtual), video.duration);
+            }
+        };
 
         window.fecharPlayer = () => {
             document.getElementById('player-area').style.display = 'none';
@@ -267,7 +296,11 @@
 
         function iniciarVideo() {
             const salvo = localStorage.getItem('time_' + btoa(linkAtual));
-            if(salvo && salvo > 5) { if(confirm("Continuar de onde parou?")) video.currentTime = parseFloat(salvo); }
+            if(salvo && parseFloat(salvo) > 5) { 
+                if(confirm("Continuar de onde parou?")) {
+                    video.currentTime = parseFloat(salvo);
+                }
+            }
             video.play();
         }
 
@@ -322,12 +355,12 @@
                 dados.forEach(temp => {
                     temp.url.split('\n').forEach((linha, idx) => { 
                         const epi = tratarLink(linha, idx);
-                        if(localStorage.getItem('time_' + btoa(epi.url)) > 5) hasProgress = true; 
+                        if(deveMostrarContinuar(epi.url)) hasProgress = true; 
                     });
                 });
             } else {
                 const epi = tratarLink(itemData.url, 0);
-                if(localStorage.getItem('time_' + btoa(epi.url)) > 5) hasProgress = true;
+                if(deveMostrarContinuar(epi.url)) hasProgress = true;
             }
             card.className = `card ${hasProgress ? 'em-andamento' : ''}`;
             card.innerHTML = `${hasProgress ? '<div class="badge-continuar">Continuar</div>' : ''}<img src="${itemData.capa}"><div class="card-title">${isSerie ? itemData.nome.split(" -")[0].trim() : itemData.nome}</div>`;
@@ -353,7 +386,7 @@
                 let tempProgress = false;
                 it.url.split('\n').forEach((linha, idx) => { 
                     const epi = tratarLink(linha, idx);
-                    if(localStorage.getItem('time_' + btoa(epi.url)) > 5) tempProgress = true; 
+                    if(deveMostrarContinuar(epi.url)) tempProgress = true; 
                 });
                 const d = document.createElement('div'); d.className = `folder-item ${tempProgress ? 'progresso-yellow' : ''}`;
                 d.innerHTML = `<span>${it.nome}</span><span>❯</span>`;
@@ -369,10 +402,10 @@
             const listaLinhas = urls.split('\n').filter(l => l.trim());
             listaLinhas.forEach((linha, i) => {
                 const epi = tratarLink(linha, i);
-                const hasEpiProg = localStorage.getItem('time_' + btoa(epi.url)) > 5;
+                const showProg = deveMostrarContinuar(epi.url);
                 const d = document.createElement('div'); 
-                d.className = `folder-item ${hasEpiProg ? 'progresso-yellow' : ''}`;
-                d.innerHTML = `<span>${epi.nome}</span><span>${hasEpiProg ? '🕒' : '▶'}</span>`;
+                d.className = `folder-item ${showProg ? 'progresso-yellow' : ''}`;
+                d.innerHTML = `<span>${epi.nome}</span><span>${showProg ? '🕒' : '▶'}</span>`;
                 d.onclick = () => { iniciarPlayer(linha, nome, listaLinhas, i); document.getElementById('modal-epis').style.display='none'; document.getElementById('modal-temp').style.display='none'; };
                 cont.appendChild(d);
             });

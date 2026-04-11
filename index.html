@@ -136,10 +136,13 @@
     </div>
 
     <div id="modal-perfil" class="modal">
-        <div class="container-box" style="margin-top: 20vh; text-align: center;">
+        <div class="container-box" style="margin-top: 15vh; text-align: center;">
             <h2 style="color:var(--red);">MEU PERFIL</h2>
+            <div id="perfil-nome-exibicao" style="margin-bottom: 15px; font-weight: bold; font-size: 18px; color: #fff;"></div>
             <p style="font-size: 13px; color: #888;">Altere sua senha de acesso</p>
-            <input type="password" id="perfil-nova-senha" placeholder="Digite a nova senha">
+            <input type="password" id="perfil-senha-atual" placeholder="Senha Atual">
+            <input type="password" id="perfil-nova-senha" placeholder="Nova Senha">
+            <input type="password" id="perfil-confirmar-senha" placeholder="Confirmar Nova Senha">
             <button class="btn-red" id="btn-atualizar-senha" style="width: 100%;">SALVAR NOVA SENHA</button>
             <button class="btn-voltar" onclick="document.getElementById('modal-perfil').style.display='none'" style="width:100%; margin-top:10px;">VOLTAR</button>
         </div>
@@ -195,6 +198,7 @@
         let playlistAtual = []; let indexEpiAtual = 0; let linkAtual = ""; let hls = null;
         let tipoAtualAberto = null;
         let idUsuarioLogado = null;
+        let nomeUsuarioLogado = "";
         const idSessaoLocal = Math.random().toString(36).substring(2, 15);
 
         const tratarLink = (linha, index) => {
@@ -221,6 +225,7 @@
             if(u === "Rhuan" && p === "2026") { 
                 document.getElementById('display-validade').innerHTML = "MODO<br>ADMIN";
                 idUsuarioLogado = "admin";
+                nomeUsuarioLogado = "ADMINISTRADOR";
                 logar(true); 
                 return; 
             }
@@ -235,7 +240,6 @@
                 let sessoes = sessoesSnap.val() || {};
                 let limite = enc.telas || 1;
 
-                // LOGICA: Se atingir limite, derruba a sessão mais antiga para entrar a nova
                 let idsAtivos = Object.keys(sessoes).sort((a,b) => sessoes[a] - sessoes[b]);
                 if(idsAtivos.length >= limite && !idsAtivos.includes(idSessaoLocal)) {
                     const antiga = idsAtivos[0];
@@ -249,10 +253,10 @@
                 monitorarSessao(enc.id);
                 window.onbeforeunload = () => { remove(ref(db, `usuarios/${enc.id}/sessoes/${idSessaoLocal}`)); };
 
-                // AJUSTE REALIZADO AQUI: Adicionado data e hora completa formatada
                 let dataVal = (enc.expira === 999) ? "ACESSO<br>VITALÍCIO" : `VENCIMENTO:<br>${new Date(enc.expira).toLocaleString('pt-br', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
                 document.getElementById('display-validade').innerHTML = dataVal;
                 idUsuarioLogado = enc.id;
+                nomeUsuarioLogado = enc.user;
                 logar(false);
             } else { alert("Usuário ou senha incorretos!"); }
         };
@@ -269,16 +273,33 @@
 
         window.abrirPerfil = () => {
             if(idUsuarioLogado === "admin") { alert("Painel ADM."); return; }
+            document.getElementById('perfil-nome-exibicao').innerText = `USUÁRIO: ${nomeUsuarioLogado}`;
+            document.getElementById('perfil-senha-atual').value = "";
+            document.getElementById('perfil-nova-senha').value = "";
+            document.getElementById('perfil-confirmar-senha').value = "";
             document.getElementById('modal-perfil').style.display = 'block';
         };
 
-        document.getElementById('btn-atualizar-senha').onclick = () => {
+        document.getElementById('btn-atualizar-senha').onclick = async () => {
+            const senhaAtual = document.getElementById('perfil-senha-atual').value;
             const nova = document.getElementById('perfil-nova-senha').value;
-            if(nova.length < 3) { alert("Mínimo 3 caracteres."); return; }
-            update(ref(db, `usuarios/${idUsuarioLogado}`), { pass: nova }).then(() => {
-                alert("Senha alterada!");
-                document.getElementById('modal-perfil').style.display = 'none';
-            });
+            const confirmar = document.getElementById('perfil-confirmar-senha').value;
+
+            if(!senhaAtual || !nova || !confirmar) { alert("Preencha todos os campos."); return; }
+            if(nova !== confirmar) { alert("As novas senhas não coincidem!"); return; }
+            if(nova.length < 3) { alert("Nova senha deve ter no mínimo 3 caracteres."); return; }
+
+            const userSnap = await get(ref(db, `usuarios/${idUsuarioLogado}`));
+            const dadosUser = userSnap.val();
+
+            if(senhaAtual !== dadosUser.pass) {
+                alert("A senha atual está incorreta!");
+            } else {
+                update(ref(db, `usuarios/${idUsuarioLogado}`), { pass: nova }).then(() => {
+                    alert("Senha alterada com sucesso!");
+                    document.getElementById('modal-perfil').style.display = 'none';
+                });
+            }
         };
 
         function logar(adm) {

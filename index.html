@@ -68,7 +68,6 @@
 
         .btn-perfil { background: #2a2a2a; color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
 
-        /* Estilo Bloqueio Tela Única */
         #tela-bloqueio { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
     </style>
 </head>
@@ -77,7 +76,7 @@
     <div id="tela-bloqueio">
         <h1 style="color:var(--red); font-size: 30px;">LIMITE ATINGIDO</h1>
         <p style="color: #ccc;">Sua conta foi conectada em outro celular.</p>
-        <p style="font-size: 12px; color: var(--yellow);">Apenas 1 tela permitida por vez.</p>
+        <p style="font-size: 12px; color: var(--yellow);">Muitas telas simultâneas.</p>
         <button class="btn-red" style="margin-top: 20px;" onclick="location.reload()">SAIR</button>
     </div>
 
@@ -179,7 +178,7 @@
             <h3>Gerenciar Usuários</h3>
             <input type="hidden" id="edit-id-user"><input id="u-nome" placeholder="Login"><input id="u-pass" placeholder="Senha">
             <div style="display: flex; gap: 10px;"><button class="btn-red" id="btn-salvar-user" style="background: #28a745; flex:1">SALVAR</button><button class="btn-red" id="btn-novo-user" style="background: #007bff; flex:1">TESTE 1H</button></div>
-            <div class="tabela-container" style="margin-top: 15px;"><table><thead><tr><th>LOGIN</th><th>VENCIMENTO</th><th>AÇÃO</th></tr></thead><tbody id="lista-user-adm"></tbody></table></div>
+            <div class="tabela-container" style="margin-top: 15px;"><table><thead><tr><th>LOGIN</th><th>TELAS</th><th>AÇÃO</th></tr></thead><tbody id="lista-user-adm"></tbody></table></div>
         </div>
     </div>
 
@@ -231,8 +230,21 @@
                 if(enc.suspenso) { alert("Sua conta está suspensa!"); return; }
                 if(enc.expira !== 999 && enc.expira < Date.now()) { alert("Seu acesso expirou!"); return; }
                 
-                await update(ref(db, `usuarios/${enc.id}`), { sessaoAtiva: idSessaoLocal });
-                monitorarSessao(enc.id);
+                const sessoesRef = ref(db, `usuarios/${enc.id}/sessoes`);
+                const sessoesSnap = await get(sessoesRef);
+                let sessoes = sessoesSnap.val() || {};
+                let idsAtivos = Object.keys(sessoes);
+                let limite = enc.telas || 1;
+
+                if(idsAtivos.length >= limite && !idsAtivos.includes(idSessaoLocal)) {
+                    document.getElementById('tela-bloqueio').style.display = 'flex';
+                    return;
+                }
+
+                sessoes[idSessaoLocal] = Date.now();
+                await update(sessoesRef, sessoes);
+                
+                window.onbeforeunload = () => { remove(ref(db, `usuarios/${enc.id}/sessoes/${idSessaoLocal}`)); };
 
                 let dataVal = (enc.expira === 999) ? "ACESSO<br>VITALÍCIO" : `VENCIMENTO:<br>${new Date(enc.expira).toLocaleString('pt-br').split(':').slice(0, 2).join(':')}`;
                 document.getElementById('display-validade').innerHTML = dataVal;
@@ -240,16 +252,6 @@
                 logar(false);
             } else { alert("Usuário ou senha incorretos!"); }
         };
-
-        function monitorarSessao(userId) {
-            onValue(ref(db, `usuarios/${userId}/sessaoAtiva`), (snap) => {
-                if (snap.val() && snap.val() !== idSessaoLocal) {
-                    document.getElementById('main-content').style.display = 'none';
-                    document.getElementById('tela-bloqueio').style.display = 'flex';
-                    video.pause();
-                }
-            });
-        }
 
         window.abrirPerfil = () => {
             if(idUsuarioLogado === "admin") { alert("Painel ADM."); return; }
@@ -298,11 +300,11 @@
                 const list = document.getElementById('lista-user-adm'); if(!list) return; list.innerHTML = "";
                 s.forEach(it => {
                     const u = it.val();
-                    let validadeTxt = (u.expira === 999) ? "VITALÍCIO" : new Date(u.expira).toLocaleString('pt-br');
                     const corStatus = u.suspenso ? '#dc3545' : '#28a745';
-                    list.innerHTML += `<tr><td>${u.user}</td><td style="font-size:9px">${validadeTxt}</td><td>
+                    list.innerHTML += `<tr><td>${u.user}</td><td style="color:var(--yellow); font-weight:bold; text-align:center;">${u.telas || 1}</td><td>
                         <button class="btn-mini" style="background:${corStatus}" onclick="window.toggleU('${it.key}', ${u.suspenso})">SUSP.</button>
                         <button class="btn-mini" style="background:#ffc107; color:#000" onclick="window.addDiasCustom('${it.key}', ${u.expira})">+D</button>
+                        <button class="btn-mini" style="background:#6f42c1" onclick="window.addTelasCustom('${it.key}', ${u.telas || 1})">+T</button>
                         <button class="btn-mini" style="background:#007bff" onclick="window.editU('${it.key}')">ED</button>
                         <button class="btn-mini" style="background:#dc3545" onclick="window.delU('${it.key}')">X</button>
                     </td></tr>`;
@@ -485,8 +487,9 @@
         window.delU = (id) => confirm("Excluir?") && remove(ref(db, `usuarios/${id}`));
         window.editU = async (id) => { const snap = await get(ref(db, `usuarios/${id}`)); const d = snap.val(); document.getElementById('edit-id-user').value = id; document.getElementById('u-nome').value = d.user; document.getElementById('u-pass').value = d.pass; };
         document.getElementById('btn-salvar-user').onclick = () => { const id = document.getElementById('edit-id-user').value; if(id) update(ref(db, `usuarios/${id}`), { user: document.getElementById('u-nome').value, pass: document.getElementById('u-pass').value }); };
-        document.getElementById('btn-novo-user').onclick = () => { const u = document.getElementById('u-nome').value, p = document.getElementById('u-pass').value; if(u && p) push(ref(db, 'usuarios'), { user: u, pass: p, expira: Date.now() + 3600000, suspenso: false }); };
+        document.getElementById('btn-novo-user').onclick = () => { const u = document.getElementById('u-nome').value, p = document.getElementById('u-pass').value; if(u && p) push(ref(db, 'usuarios'), { user: u, pass: p, expira: Date.now() + 3600000, suspenso: false, telas: 1 }); };
         window.addDiasCustom = (id, expAtual) => { const dias = prompt("Dias:"); if(dias) { if(dias === "999") update(ref(db, `usuarios/${id}`), { expira: 999 }); else update(ref(db, `usuarios/${id}`), { expira: ((expAtual < Date.now() || expAtual === 999) ? Date.now() : expAtual) + (parseInt(dias) * 86400000) }); } };
+        window.addTelasCustom = (id, atual) => { const n = prompt("Limite de telas:", atual || 1); if(n) update(ref(db, `usuarios/${id}`), { telas: parseInt(n) }); };
 
         function renderADMConteudo(termo = "") {
             const list = document.getElementById('tabela-conteudo-adm'); if(!list) return; list.innerHTML = "";

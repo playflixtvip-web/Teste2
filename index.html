@@ -69,6 +69,7 @@
         .btn-perfil { background: #2a2a2a; color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
 
         #tela-bloqueio { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -247,7 +248,7 @@
                     delete sessoes[antiga];
                 }
 
-                sessoes[idSessaoLocal] = Date.now();
+                sessoes[idSessaoLocal] = { time: Date.now(), online: false };
                 await update(sessoesRef, sessoes);
                 
                 monitorarSessao(enc.id);
@@ -338,7 +339,14 @@
                     const corStatus = u.suspenso ? '#dc3545' : '#28a745';
                     let vTxt = (u.expira === 999) ? "VITALÍCIO" : new Date(u.expira).toLocaleDateString('pt-br');
                     
-                    list.innerHTML += `<tr><td>${u.user}</td><td><span style="color:var(--yellow)">[${u.telas || 1}T]</span> ${vTxt}</td><td>
+                    let statusLabel = '<span class="status-dot" style="background:#444"></span> Offline';
+                    if (u.sessoes) {
+                        const sessoes = Object.values(u.sessoes);
+                        const ativa = sessoes.find(s => s.online === true);
+                        if (ativa) statusLabel = `<span class="status-dot" style="background:#28a745"></span> <span style="color:#28a745">Online</span><br><small style="color:var(--yellow); font-size:9px;">${ativa.titulo || ''}</small>`;
+                    }
+
+                    list.innerHTML += `<tr><td>${u.user}<br>${statusLabel}</td><td><span style="color:var(--yellow)">[${u.telas || 1}T]</span> ${vTxt}</td><td>
                         <button class="btn-mini" style="background:${corStatus}" onclick="window.toggleU('${it.key}', ${u.suspenso})">SUSP.</button>
                         <button class="btn-mini" style="background:#ffc107; color:#000" onclick="window.addDiasCustom('${it.key}', ${u.expira})">+D</button>
                         <button class="btn-mini" style="background:#6f42c1" onclick="window.addTelasCustom('${it.key}', ${u.telas || 1})">+T</button>
@@ -357,6 +365,9 @@
         };
 
         window.fecharPlayer = () => {
+            if (idUsuarioLogado && idUsuarioLogado !== "admin") {
+                update(ref(db, `usuarios/${idUsuarioLogado}/sessoes/${idSessaoLocal}`), { online: false, titulo: null });
+            }
             document.getElementById('player-area').style.display = 'none';
             video.pause();
             renderHome(tipoAtualAberto);
@@ -365,6 +376,11 @@
         window.iniciarPlayer = (urlBruta, nome, listaEpis = [], index = 0) => {
             const dadosEpi = tratarLink(urlBruta, index);
             linkAtual = dadosEpi.url;
+            
+            if (idUsuarioLogado && idUsuarioLogado !== "admin") {
+                update(ref(db, `usuarios/${idUsuarioLogado}/sessoes/${idSessaoLocal}`), { online: true, titulo: nome });
+            }
+
             playlistAtual = listaEpis; indexEpiAtual = index;
             document.getElementById('player-area').style.display = 'block';
             const listDiv = document.getElementById('lista-epis-inline');

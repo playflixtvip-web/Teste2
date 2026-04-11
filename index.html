@@ -74,9 +74,8 @@
 <body>
 
     <div id="tela-bloqueio">
-        <h1 style="color:var(--red); font-size: 30px;">SESSÃO ENCERRADA</h1>
-        <p style="color: #ccc;">Este login foi utilizado em outro aparelho.</p>
-        <p style="font-size: 12px; color: var(--yellow);">O limite de telas foi atingido e a sessão anterior foi desconectada.</p>
+        <h1 style="color:var(--red); font-size: 30px;">ACESSO ENCERRADO</h1>
+        <p style="color: #ccc;" id="bloqueio-msg">Sua sessão foi desconectada.</p>
         <button class="btn-red" style="margin-top: 20px;" onclick="location.reload()">VOLTAR AO LOGIN</button>
     </div>
 
@@ -101,7 +100,7 @@
                 <div style="display:flex; gap:5px;">
                     <button id="b-a" class="btn-red" style="display:none; padding: 6px 10px;">ADM</button>
                     <button class="btn-perfil" onclick="abrirPerfil()">👤</button>
-                    <button class="btn-voltar" onclick="location.reload()" style="padding: 6px 10px;">SAIR</button>
+                    <button class="btn-voltar" onclick="deslogarManual()" style="padding: 6px 10px;">SAIR</button>
                 </div>
             </div>
         </header>
@@ -190,16 +189,59 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update, get, onDisconnect, goOffline, goOnline } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
+        
         let bancoDados = []; const video = document.getElementById('main-video');
         let playlistAtual = []; let indexEpiAtual = 0; let linkAtual = ""; let hls = null;
         let tipoAtualAberto = null;
         let idUsuarioLogado = null;
         let nomeUsuarioLogado = "";
         const idSessaoLocal = Math.random().toString(36).substring(2, 15);
+
+        function gerenciarPresenca(userId) {
+            if (userId === "admin") return;
+            const sessaoRef = ref(db, `usuarios/${userId}/sessoes/${idSessaoLocal}`);
+            const connectedRef = ref(db, ".info/connected");
+
+            onValue(connectedRef, (snap) => {
+                if (snap.val() === true) {
+                    onDisconnect(sessaoRef).remove();
+                    update(sessaoRef, Date.now());
+                }
+            });
+
+            // REFORÇO: EVENTOS DE FECHAMENTO E VISIBILIDADE
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "hidden") {
+                    goOffline(db);
+                } else {
+                    goOnline(db);
+                }
+            });
+
+            window.addEventListener("pagehide", () => {
+                goOffline(db);
+            });
+
+            onValue(ref(db, `usuarios/${userId}/suspenso`), (s) => { if(s.val() === true) encerrarForcado("Sua conta foi suspensa pelo administrador."); });
+            onValue(sessaoRef, (s) => { if(!s.exists()) encerrarForcado("Este login foi utilizado em outro aparelho ou desconectado."); });
+        }
+
+        window.deslogarManual = () => {
+            if(idUsuarioLogado && idUsuarioLogado !== "admin") {
+                remove(ref(db, `usuarios/${idUsuarioLogado}/sessoes/${idSessaoLocal}`)).then(() => location.reload());
+            } else { location.reload(); }
+        };
+
+        function encerrarForcado(msg) {
+            document.getElementById('bloqueio-msg').innerText = msg;
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('tela-bloqueio').style.display = 'flex';
+            video.pause();
+        }
 
         const tratarLink = (linha, index) => {
             if (linha.includes('|')) {
@@ -244,62 +286,16 @@
                 if(idsAtivos.length >= limite && !idsAtivos.includes(idSessaoLocal)) {
                     const antiga = idsAtivos[0];
                     await remove(ref(db, `usuarios/${enc.id}/sessoes/${antiga}`));
-                    delete sessoes[antiga];
                 }
 
-                sessoes[idSessaoLocal] = Date.now();
-                await update(sessoesRef, sessoes);
-                
-                monitorarSessao(enc.id);
-                window.onbeforeunload = () => { remove(ref(db, `usuarios/${enc.id}/sessoes/${idSessaoLocal}`)); };
-
-                let dataVal = (enc.expira === 999) ? "ACESSO<br>VITALÍCIO" : `VENCIMENTO:<br>${new Date(enc.expira).toLocaleString('pt-br', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
-                document.getElementById('display-validade').innerHTML = dataVal;
                 idUsuarioLogado = enc.id;
                 nomeUsuarioLogado = enc.user;
+                gerenciarPresenca(enc.id);
+
+                let dataVal = (enc.expira === 999) ? "ACESSO<br>VITALÍCIO" : `VENCIMENTO:<br>${new Date(enc.expira).toLocaleString('pt-br', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+                document.getElementById('display-validade').innerHTML = dataVal;
                 logar(false);
             } else { alert("Usuário ou senha incorretos!"); }
-        };
-
-        function monitorarSessao(userId) {
-            onValue(ref(db, `usuarios/${userId}/sessoes/${idSessaoLocal}`), (snap) => {
-                if (!snap.exists()) {
-                    document.getElementById('main-content').style.display = 'none';
-                    document.getElementById('tela-bloqueio').style.display = 'flex';
-                    video.pause();
-                }
-            });
-        }
-
-        window.abrirPerfil = () => {
-            if(idUsuarioLogado === "admin") { alert("Painel ADM."); return; }
-            document.getElementById('perfil-nome-exibicao').innerText = `USUÁRIO: ${nomeUsuarioLogado}`;
-            document.getElementById('perfil-senha-atual').value = "";
-            document.getElementById('perfil-nova-senha').value = "";
-            document.getElementById('perfil-confirmar-senha').value = "";
-            document.getElementById('modal-perfil').style.display = 'block';
-        };
-
-        document.getElementById('btn-atualizar-senha').onclick = async () => {
-            const senhaAtual = document.getElementById('perfil-senha-atual').value;
-            const nova = document.getElementById('perfil-nova-senha').value;
-            const confirmar = document.getElementById('perfil-confirmar-senha').value;
-
-            if(!senhaAtual || !nova || !confirmar) { alert("Preencha todos os campos."); return; }
-            if(nova !== confirmar) { alert("As novas senhas não coincidem!"); return; }
-            if(nova.length < 3) { alert("Nova senha deve ter no mínimo 3 caracteres."); return; }
-
-            const userSnap = await get(ref(db, `usuarios/${idUsuarioLogado}`));
-            const dadosUser = userSnap.val();
-
-            if(senhaAtual !== dadosUser.pass) {
-                alert("A senha atual está incorreta!");
-            } else {
-                update(ref(db, `usuarios/${idUsuarioLogado}`), { pass: nova }).then(() => {
-                    alert("Senha alterada com sucesso!");
-                    document.getElementById('modal-perfil').style.display = 'none';
-                });
-            }
         };
 
         function logar(adm) {
@@ -336,9 +332,11 @@
                 s.forEach(it => {
                     const u = it.val();
                     const corStatus = u.suspenso ? '#dc3545' : '#28a745';
+                    const isOnline = u.sessoes && Object.keys(u.sessoes).length > 0;
+                    const statusBola = isOnline ? '<span style="color:#0f0; font-size:10px;"> ● Online</span>' : '<span style="color:#888; font-size:10px;"> ● Offline</span>';
                     let vTxt = (u.expira === 999) ? "VITALÍCIO" : new Date(u.expira).toLocaleDateString('pt-br');
                     
-                    list.innerHTML += `<tr><td>${u.user}</td><td><span style="color:var(--yellow)">[${u.telas || 1}T]</span> ${vTxt}</td><td>
+                    list.innerHTML += `<tr><td>${u.user}${statusBola}</td><td><span style="color:var(--yellow)">[${u.telas || 1}T]</span> ${vTxt}</td><td>
                         <button class="btn-mini" style="background:${corStatus}" onclick="window.toggleU('${it.key}', ${u.suspenso})">SUSP.</button>
                         <button class="btn-mini" style="background:#ffc107; color:#000" onclick="window.addDiasCustom('${it.key}', ${u.expira})">+D</button>
                         <button class="btn-mini" style="background:#6f42c1" onclick="window.addTelasCustom('${it.key}', ${u.telas || 1})">+T</button>
@@ -356,11 +354,7 @@
             }
         };
 
-        window.fecharPlayer = () => {
-            document.getElementById('player-area').style.display = 'none';
-            video.pause();
-            renderHome(tipoAtualAberto);
-        };
+        window.fecharPlayer = () => { document.getElementById('player-area').style.display = 'none'; video.pause(); renderHome(tipoAtualAberto); };
 
         window.iniciarPlayer = (urlBruta, nome, listaEpis = [], index = 0) => {
             const dadosEpi = tratarLink(urlBruta, index);
@@ -381,19 +375,13 @@
             if(hls) { hls.destroy(); hls = null; }
             if(Hls.isSupported()){ 
                 hls = new Hls(); hls.loadSource(linkAtual); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); 
-            } else { 
-                video.src = linkAtual; video.play(); iniciarVideo();
-            }
+            } else { video.src = linkAtual; video.play(); iniciarVideo(); }
             window.scrollTo(0,0);
         };
 
         function iniciarVideo() {
             const salvo = localStorage.getItem('time_' + btoa(linkAtual));
-            if(salvo && parseFloat(salvo) > 5) { 
-                if(confirm("Continuar de onde parou?")) {
-                    video.currentTime = parseFloat(salvo);
-                }
-            }
+            if(salvo && parseFloat(salvo) > 5) { if(confirm("Continuar de onde parou?")) video.currentTime = parseFloat(salvo); }
             video.play();
         }
 
@@ -445,16 +433,8 @@
             const card = document.createElement('div');
             let hasProgress = false;
             if(isSerie) {
-                dados.forEach(temp => {
-                    temp.url.split('\n').forEach((linha, idx) => { 
-                        const epi = tratarLink(linha, idx);
-                        if(deveMostrarContinuar(epi.url)) hasProgress = true; 
-                    });
-                });
-            } else {
-                const epi = tratarLink(itemData.url, 0);
-                if(deveMostrarContinuar(epi.url)) hasProgress = true;
-            }
+                dados.forEach(temp => { temp.url.split('\n').forEach((linha, idx) => { if(deveMostrarContinuar(tratarLink(linha, idx).url)) hasProgress = true; }); });
+            } else { if(deveMostrarContinuar(tratarLink(itemData.url, 0).url)) hasProgress = true; }
             card.className = `card ${hasProgress ? 'em-andamento' : ''}`;
             card.innerHTML = `${hasProgress ? '<div class="badge-continuar">Continuar</div>' : ''}<img src="${itemData.capa}"><div class="card-title">${isSerie ? itemData.nome.split(" -")[0].trim() : itemData.nome}</div>`;
             card.onclick = () => abrirInfo(itemData, dados, isSerie);
@@ -466,8 +446,7 @@
             document.getElementById('info-bg').style.backgroundImage = `url(${item.capa})`;
             document.getElementById('info-titulo').innerText = isSerie ? item.nome.split(" -")[0].trim() : item.nome;
             document.getElementById('info-sinopse').innerText = item.sinopse || "Nenhuma sinopse disponível.";
-            const btnPlay = document.getElementById('btn-info-play');
-            btnPlay.onclick = () => { modal.style.display = 'none'; isSerie ? abrirTemporadas(item.nome.split(" -")[0].trim(), dados) : iniciarPlayer(dados, item.nome); };
+            document.getElementById('btn-info-play').onclick = () => { modal.style.display = 'none'; isSerie ? abrirTemporadas(item.nome.split(" -")[0].trim(), dados) : iniciarPlayer(dados, item.nome); };
             modal.style.display = 'block';
         };
 
@@ -477,10 +456,7 @@
             const cont = document.getElementById('temp-lista'); cont.innerHTML = "";
             lista.forEach(it => {
                 let tempProgress = false;
-                it.url.split('\n').forEach((linha, idx) => { 
-                    const epi = tratarLink(linha, idx);
-                    if(deveMostrarContinuar(epi.url)) tempProgress = true; 
-                    });
+                it.url.split('\n').forEach((linha, idx) => { if(deveMostrarContinuar(tratarLink(linha, idx).url)) tempProgress = true; });
                 const d = document.createElement('div'); d.className = `folder-item ${tempProgress ? 'progresso-yellow' : ''}`;
                 d.innerHTML = `<span>${it.nome}</span><span>❯</span>`;
                 d.onclick = () => abrirEpisodios(it.nome, it.url);
@@ -496,8 +472,7 @@
             listaLinhas.forEach((linha, i) => {
                 const epi = tratarLink(linha, i);
                 const showProg = deveMostrarContinuar(epi.url);
-                const d = document.createElement('div'); 
-                d.className = `folder-item ${showProg ? 'progresso-yellow' : ''}`;
+                const d = document.createElement('div'); d.className = `folder-item ${showProg ? 'progresso-yellow' : ''}`;
                 d.innerHTML = `<span>${epi.nome}</span><span>${showProg ? '🕒' : '▶'}</span>`;
                 d.onclick = () => { iniciarPlayer(linha, nome, listaLinhas, i); document.getElementById('modal-epis').style.display='none'; document.getElementById('modal-temp').style.display='none'; };
                 cont.appendChild(d);
@@ -520,7 +495,10 @@
             });
         };
 
-        window.toggleU = (id, s) => update(ref(db, `usuarios/${id}`), { suspenso: !s });
+        window.toggleU = async (id, s) => {
+            await update(ref(db, `usuarios/${id}`), { suspenso: !s });
+            if(!s) await remove(ref(db, `usuarios/${id}/sessoes`));
+        };
         window.delU = (id) => confirm("Excluir?") && remove(ref(db, `usuarios/${id}`));
         window.editU = async (id) => { const snap = await get(ref(db, `usuarios/${id}`)); const d = snap.val(); document.getElementById('edit-id-user').value = id; document.getElementById('u-nome').value = d.user; document.getElementById('u-pass').value = d.pass; };
         document.getElementById('btn-salvar-user').onclick = () => { const id = document.getElementById('edit-id-user').value; if(id) update(ref(db, `usuarios/${id}`), { user: document.getElementById('u-nome').value, pass: document.getElementById('u-pass').value }); };
@@ -534,9 +512,7 @@
                 list.innerHTML += `<tr><td>${d.nome}</td><td style="color:var(--red)">${d.categoria}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editC('${d.id}')">ED</button><button class="btn-mini" style="background:#dc3545" onclick="window.delC('${d.id}')">X</button></td></tr>`;
             });
         }
-        window.editC = (id) => { 
-            const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-sinopse').value = d.sinopse || ""; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); 
-        };
+        window.editC = (id) => { const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-sinopse').value = d.sinopse || ""; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); };
         document.getElementById('btn-limpar-db').onclick = () => { document.getElementById('edit-id-cont').value = ""; document.getElementById('c-nome').value = ""; document.getElementById('c-cat').value = ""; document.getElementById('c-sinopse').value = ""; document.getElementById('c-links').value = ""; document.getElementById('c-capa').value = ""; alert("Limpo!"); };
         document.getElementById('btn-salvar-db').onclick = () => { const id = document.getElementById('edit-id-cont').value; const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), sinopse: document.getElementById('c-sinopse').value, url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value }; id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj); alert("Sucesso!"); };
         window.delC = (id) => confirm("Excluir?") && remove(ref(db, `conteudo/${id}`));
@@ -544,6 +520,22 @@
         document.getElementById('busca-user').onkeyup = (e) => { const t = e.target.value.toLowerCase(); const home = document.getElementById('conteudo-home'), detail = document.getElementById('view-detalhe'), grid = document.getElementById('grid-itens'); if(t.length > 0) { home.style.display = 'none'; detail.style.display = 'block'; grid.innerHTML = ""; bancoDados.filter(it => it.nome.toLowerCase().includes(t)).forEach(it => criarCard(it, it.url, it.tipo === 'serie', grid)); } else { home.style.display = 'block'; detail.style.display = 'none'; } };
         document.getElementById('b-a').onclick = () => { document.getElementById('main-content').style.display='none'; document.getElementById('admin-panel').style.display='block'; };
         document.getElementById('btn-voltar-adm').onclick = () => { document.getElementById('admin-panel').style.display='none'; document.getElementById('main-content').style.display='block'; };
+        
+        window.abrirPerfil = () => {
+            if(idUsuarioLogado === "admin") { alert("Painel ADM."); return; }
+            document.getElementById('perfil-nome-exibicao').innerText = `USUÁRIO: ${nomeUsuarioLogado}`;
+            document.getElementById('perfil-senha-atual').value = ""; document.getElementById('perfil-nova-senha').value = ""; document.getElementById('perfil-confirmar-senha').value = "";
+            document.getElementById('modal-perfil').style.display = 'block';
+        };
+
+        document.getElementById('btn-atualizar-senha').onclick = async () => {
+            const senhaAtual = document.getElementById('perfil-senha-atual').value, nova = document.getElementById('perfil-nova-senha').value, confirmar = document.getElementById('perfil-confirmar-senha').value;
+            if(!senhaAtual || !nova || !confirmar) { alert("Preencha todos os campos."); return; }
+            if(nova !== confirmar) { alert("As novas senhas não coincidem!"); return; }
+            const userSnap = await get(ref(db, `usuarios/${idUsuarioLogado}`));
+            if(senhaAtual !== userSnap.val().pass) { alert("A senha atual está incorreta!"); } 
+            else { update(ref(db, `usuarios/${idUsuarioLogado}`), { pass: nova }).then(() => { alert("Senha alterada com sucesso!"); document.getElementById('modal-perfil').style.display = 'none'; }); }
+        };
     </script>
 </body>
 </html>

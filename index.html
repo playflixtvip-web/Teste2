@@ -202,6 +202,7 @@
         let nomeUsuarioLogado = "";
         const idSessaoLocal = Math.random().toString(36).substring(2, 15);
 
+        // ... Funções auxiliares mantidas ...
         const tratarLink = (linha, index) => {
             if (linha.includes('|')) {
                 const partes = linha.split('|');
@@ -221,6 +222,7 @@
             return true;
         }
 
+        // --- LÓGICA DE LOGIN ---
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('u-l').value; const p = document.getElementById('p-l').value;
             if(u === "Rhuan" && p === "2026") { 
@@ -275,9 +277,6 @@
         window.abrirPerfil = () => {
             if(idUsuarioLogado === "admin") { alert("Painel ADM."); return; }
             document.getElementById('perfil-nome-exibicao').innerText = `USUÁRIO: ${nomeUsuarioLogado}`;
-            document.getElementById('perfil-senha-atual').value = "";
-            document.getElementById('perfil-nova-senha').value = "";
-            document.getElementById('perfil-confirmar-senha').value = "";
             document.getElementById('modal-perfil').style.display = 'block';
         };
 
@@ -285,22 +284,12 @@
             const senhaAtual = document.getElementById('perfil-senha-atual').value;
             const nova = document.getElementById('perfil-nova-senha').value;
             const confirmar = document.getElementById('perfil-confirmar-senha').value;
-
             if(!senhaAtual || !nova || !confirmar) { alert("Preencha todos os campos."); return; }
             if(nova !== confirmar) { alert("As novas senhas não coincidem!"); return; }
-            if(nova.length < 3) { alert("Nova senha deve ter no mínimo 3 caracteres."); return; }
-
             const userSnap = await get(ref(db, `usuarios/${idUsuarioLogado}`));
             const dadosUser = userSnap.val();
-
-            if(senhaAtual !== dadosUser.pass) {
-                alert("A senha atual está incorreta!");
-            } else {
-                update(ref(db, `usuarios/${idUsuarioLogado}`), { pass: nova }).then(() => {
-                    alert("Senha alterada com sucesso!");
-                    document.getElementById('modal-perfil').style.display = 'none';
-                });
-            }
+            if(senhaAtual !== dadosUser.pass) { alert("A senha atual está incorreta!"); } 
+            else { update(ref(db, `usuarios/${idUsuarioLogado}`), { pass: nova }).then(() => { alert("Senha alterada!"); document.getElementById('modal-perfil').style.display = 'none'; }); }
         };
 
         function logar(adm) {
@@ -319,7 +308,11 @@
             renderHome(tipo);
         };
 
+        // --- ATUALIZAÇÃO: VOLTAR AO PORTAL MARCA OFFLINE ---
         window.voltarAoPortal = () => {
+            if (idUsuarioLogado && idUsuarioLogado !== "admin") {
+                update(ref(db, `usuarios/${idUsuarioLogado}/sessoes/${idSessaoLocal}`), { online: false, titulo: null });
+            }
             document.getElementById('portal-inicio').style.display = 'block';
             document.getElementById('conteudo-app').style.display = 'none';
             document.getElementById('btn-portal-back').style.display = 'none';
@@ -376,40 +369,23 @@
         window.iniciarPlayer = (urlBruta, nome, listaEpis = [], index = 0) => {
             const dadosEpi = tratarLink(urlBruta, index);
             linkAtual = dadosEpi.url;
-            
             if (idUsuarioLogado && idUsuarioLogado !== "admin") {
                 update(ref(db, `usuarios/${idUsuarioLogado}/sessoes/${idSessaoLocal}`), { online: true, titulo: nome });
             }
-
             playlistAtual = listaEpis; indexEpiAtual = index;
             document.getElementById('player-area').style.display = 'block';
             const listDiv = document.getElementById('lista-epis-inline');
-            if(playlistAtual.length > 1) {
-                listDiv.style.display = 'block';
-                document.getElementById('btn-prev-epi').style.display = 'block';
-                document.getElementById('btn-next-epi').style.display = 'block';
-                renderListaInline();
-            } else {
-                listDiv.style.display = 'none';
-                document.getElementById('btn-prev-epi').style.display = 'none';
-                document.getElementById('btn-next-epi').style.display = 'none';
-            }
+            if(playlistAtual.length > 1) { listDiv.style.display = 'block'; document.getElementById('btn-prev-epi').style.display = 'block'; document.getElementById('btn-next-epi').style.display = 'block'; renderListaInline(); } 
+            else { listDiv.style.display = 'none'; document.getElementById('btn-prev-epi').style.display = 'none'; document.getElementById('btn-next-epi').style.display = 'none'; }
             if(hls) { hls.destroy(); hls = null; }
-            if(Hls.isSupported()){ 
-                hls = new Hls(); hls.loadSource(linkAtual); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); 
-            } else { 
-                video.src = linkAtual; video.play(); iniciarVideo();
-            }
+            if(Hls.isSupported()){ hls = new Hls(); hls.loadSource(linkAtual); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); } 
+            else { video.src = linkAtual; video.play(); iniciarVideo(); }
             window.scrollTo(0,0);
         };
 
         function iniciarVideo() {
             const salvo = localStorage.getItem('time_' + btoa(linkAtual));
-            if(salvo && parseFloat(salvo) > 5) { 
-                if(confirm("Continuar de onde parou?")) {
-                    video.currentTime = parseFloat(salvo);
-                }
-            }
+            if(salvo && parseFloat(salvo) > 5) { if(confirm("Continuar de onde parou?")) { video.currentTime = parseFloat(salvo); } }
             video.play();
         }
 
@@ -460,17 +436,8 @@
         function criarCard(itemData, dados, isSerie, local) {
             const card = document.createElement('div');
             let hasProgress = false;
-            if(isSerie) {
-                dados.forEach(temp => {
-                    temp.url.split('\n').forEach((linha, idx) => { 
-                        const epi = tratarLink(linha, idx);
-                        if(deveMostrarContinuar(epi.url)) hasProgress = true; 
-                    });
-                });
-            } else {
-                const epi = tratarLink(itemData.url, 0);
-                if(deveMostrarContinuar(epi.url)) hasProgress = true;
-            }
+            if(isSerie) { dados.forEach(temp => { temp.url.split('\n').forEach((linha, idx) => { const epi = tratarLink(linha, idx); if(deveMostrarContinuar(epi.url)) hasProgress = true; }); }); } 
+            else { const epi = tratarLink(itemData.url, 0); if(deveMostrarContinuar(epi.url)) hasProgress = true; }
             card.className = `card ${hasProgress ? 'em-andamento' : ''}`;
             card.innerHTML = `${hasProgress ? '<div class="badge-continuar">Continuar</div>' : ''}<img src="${itemData.capa}"><div class="card-title">${isSerie ? itemData.nome.split(" -")[0].trim() : itemData.nome}</div>`;
             card.onclick = () => abrirInfo(itemData, dados, isSerie);
@@ -493,10 +460,7 @@
             const cont = document.getElementById('temp-lista'); cont.innerHTML = "";
             lista.forEach(it => {
                 let tempProgress = false;
-                it.url.split('\n').forEach((linha, idx) => { 
-                    const epi = tratarLink(linha, idx);
-                    if(deveMostrarContinuar(epi.url)) tempProgress = true; 
-                    });
+                it.url.split('\n').forEach((linha, idx) => { const epi = tratarLink(linha, idx); if(deveMostrarContinuar(epi.url)) tempProgress = true; });
                 const d = document.createElement('div'); d.className = `folder-item ${tempProgress ? 'progresso-yellow' : ''}`;
                 d.innerHTML = `<span>${it.nome}</span><span>❯</span>`;
                 d.onclick = () => abrirEpisodios(it.nome, it.url);
@@ -550,9 +514,7 @@
                 list.innerHTML += `<tr><td>${d.nome}</td><td style="color:var(--red)">${d.categoria}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editC('${d.id}')">ED</button><button class="btn-mini" style="background:#dc3545" onclick="window.delC('${d.id}')">X</button></td></tr>`;
             });
         }
-        window.editC = (id) => { 
-            const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-sinopse').value = d.sinopse || ""; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); 
-        };
+        window.editC = (id) => { const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-sinopse').value = d.sinopse || ""; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); };
         document.getElementById('btn-limpar-db').onclick = () => { document.getElementById('edit-id-cont').value = ""; document.getElementById('c-nome').value = ""; document.getElementById('c-cat').value = ""; document.getElementById('c-sinopse').value = ""; document.getElementById('c-links').value = ""; document.getElementById('c-capa').value = ""; alert("Limpo!"); };
         document.getElementById('btn-salvar-db').onclick = () => { const id = document.getElementById('edit-id-cont').value; const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), sinopse: document.getElementById('c-sinopse').value, url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value }; id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj); alert("Sucesso!"); };
         window.delC = (id) => confirm("Excluir?") && remove(ref(db, `conteudo/${id}`));

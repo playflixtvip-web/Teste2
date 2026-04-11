@@ -74,10 +74,10 @@
 <body>
 
     <div id="tela-bloqueio">
-        <h1 style="color:var(--red); font-size: 30px;">LIMITE ATINGIDO</h1>
-        <p style="color: #ccc;">Sua conta foi conectada em outro celular.</p>
-        <p style="font-size: 12px; color: var(--yellow);">Muitas telas simultâneas.</p>
-        <button class="btn-red" style="margin-top: 20px;" onclick="location.reload()">SAIR</button>
+        <h1 style="color:var(--red); font-size: 30px;">SESSÃO ENCERRADA</h1>
+        <p style="color: #ccc;">Este login foi utilizado em outro aparelho.</p>
+        <p style="font-size: 12px; color: var(--yellow);">O limite de telas foi atingido e a sessão anterior foi desconectada.</p>
+        <button class="btn-red" style="margin-top: 20px;" onclick="location.reload()">VOLTAR AO LOGIN</button>
     </div>
 
     <div id="login-container" style="position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; z-index:9999;">
@@ -178,7 +178,7 @@
             <h3>Gerenciar Usuários</h3>
             <input type="hidden" id="edit-id-user"><input id="u-nome" placeholder="Login"><input id="u-pass" placeholder="Senha">
             <div style="display: flex; gap: 10px;"><button class="btn-red" id="btn-salvar-user" style="background: #28a745; flex:1">SALVAR</button><button class="btn-red" id="btn-novo-user" style="background: #007bff; flex:1">TESTE 1H</button></div>
-            <div class="tabela-container" style="margin-top: 15px;"><table><thead><tr><th>LOGIN</th><th>TELAS</th><th>AÇÃO</th></tr></thead><tbody id="lista-user-adm"></tbody></table></div>
+            <div class="tabela-container" style="margin-top: 15px;"><table><thead><tr><th>LOGIN</th><th>T / VENCIMENTO</th><th>AÇÃO</th></tr></thead><tbody id="lista-user-adm"></tbody></table></div>
         </div>
     </div>
 
@@ -233,17 +233,20 @@
                 const sessoesRef = ref(db, `usuarios/${enc.id}/sessoes`);
                 const sessoesSnap = await get(sessoesRef);
                 let sessoes = sessoesSnap.val() || {};
-                let idsAtivos = Object.keys(sessoes);
                 let limite = enc.telas || 1;
 
+                // LOGICA: Se atingir limite, derruba a sessão mais antiga para entrar a nova
+                let idsAtivos = Object.keys(sessoes).sort((a,b) => sessoes[a] - sessoes[b]);
                 if(idsAtivos.length >= limite && !idsAtivos.includes(idSessaoLocal)) {
-                    document.getElementById('tela-bloqueio').style.display = 'flex';
-                    return;
+                    const antiga = idsAtivos[0];
+                    await remove(ref(db, `usuarios/${enc.id}/sessoes/${antiga}`));
+                    delete sessoes[antiga];
                 }
 
                 sessoes[idSessaoLocal] = Date.now();
                 await update(sessoesRef, sessoes);
                 
+                monitorarSessao(enc.id);
                 window.onbeforeunload = () => { remove(ref(db, `usuarios/${enc.id}/sessoes/${idSessaoLocal}`)); };
 
                 let dataVal = (enc.expira === 999) ? "ACESSO<br>VITALÍCIO" : `VENCIMENTO:<br>${new Date(enc.expira).toLocaleString('pt-br').split(':').slice(0, 2).join(':')}`;
@@ -252,6 +255,16 @@
                 logar(false);
             } else { alert("Usuário ou senha incorretos!"); }
         };
+
+        function monitorarSessao(userId) {
+            onValue(ref(db, `usuarios/${userId}/sessoes/${idSessaoLocal}`), (snap) => {
+                if (!snap.exists()) {
+                    document.getElementById('main-content').style.display = 'none';
+                    document.getElementById('tela-bloqueio').style.display = 'flex';
+                    video.pause();
+                }
+            });
+        }
 
         window.abrirPerfil = () => {
             if(idUsuarioLogado === "admin") { alert("Painel ADM."); return; }
@@ -301,7 +314,9 @@
                 s.forEach(it => {
                     const u = it.val();
                     const corStatus = u.suspenso ? '#dc3545' : '#28a745';
-                    list.innerHTML += `<tr><td>${u.user}</td><td style="color:var(--yellow); font-weight:bold; text-align:center;">${u.telas || 1}</td><td>
+                    let vTxt = (u.expira === 999) ? "VITALÍCIO" : new Date(u.expira).toLocaleDateString('pt-br');
+                    
+                    list.innerHTML += `<tr><td>${u.user}</td><td><span style="color:var(--yellow)">[${u.telas || 1}T]</span> ${vTxt}</td><td>
                         <button class="btn-mini" style="background:${corStatus}" onclick="window.toggleU('${it.key}', ${u.suspenso})">SUSP.</button>
                         <button class="btn-mini" style="background:#ffc107; color:#000" onclick="window.addDiasCustom('${it.key}', ${u.expira})">+D</button>
                         <button class="btn-mini" style="background:#6f42c1" onclick="window.addTelasCustom('${it.key}', ${u.telas || 1})">+T</button>

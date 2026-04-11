@@ -30,7 +30,11 @@
 
         .card { flex: 0 0 auto; width: 110px; border-radius: 4px; overflow: hidden; cursor: pointer; background: var(--card); border: 1px solid #222; position: relative; transition: 0.2s; }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
-        .card-title { font-size: 11px; padding: 6px 5px; text-align: center; color: #fff; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; white-space: normal; height: 32px; }
+        .card-title { 
+            font-size: 11px; padding: 6px 5px; text-align: center; color: #fff; font-weight: 500;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; text-overflow: ellipsis; white-space: normal; height: 32px;
+        }
         .card.em-andamento { border: 2px solid var(--yellow); box-shadow: 0 0 10px rgba(255, 204, 0, 0.3); }
         .badge-continuar { position: absolute; top: 5px; right: 5px; background: var(--yellow); color: #000; font-size: 8px; font-weight: 900; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; }
 
@@ -61,9 +65,21 @@
         .info-content { padding: 20px; position: relative; margin-top: -50px; }
         .info-titulo { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
         .info-sinopse { font-size: 14px; color: #ccc; line-height: 1.5; margin-bottom: 20px; }
+
+        .btn-perfil { background: #2a2a2a; color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+
+        /* Estilo Bloqueio Tela Única */
+        #tela-bloqueio { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
     </style>
 </head>
 <body>
+
+    <div id="tela-bloqueio">
+        <h1 style="color:var(--red); font-size: 30px;">LIMITE ATINGIDO</h1>
+        <p style="color: #ccc;">Sua conta foi conectada em outro celular.</p>
+        <p style="font-size: 12px; color: var(--yellow);">Apenas 1 tela permitida por vez.</p>
+        <button class="btn-red" style="margin-top: 20px;" onclick="location.reload()">SAIR</button>
+    </div>
 
     <div id="login-container" style="position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; z-index:9999;">
         <div class="container-box" style="width: 85%; max-width: 350px; text-align: center;">
@@ -80,10 +96,12 @@
                 <button class="btn-voltar" id="btn-portal-back" style="display:none" onclick="voltarAoPortal()">← INÍCIO</button>
                 <div class="logo">CLONEFLIX</div>
             </div>
+            
             <div style="display:flex; align-items:center; gap:12px;">
                 <div id="display-validade" class="user-validade"></div>
                 <div style="display:flex; gap:5px;">
                     <button id="b-a" class="btn-red" style="display:none; padding: 6px 10px;">ADM</button>
+                    <button class="btn-perfil" onclick="abrirPerfil()">👤</button>
                     <button class="btn-voltar" onclick="location.reload()" style="padding: 6px 10px;">SAIR</button>
                 </div>
             </div>
@@ -115,6 +133,16 @@
                 <h2 id="titulo-categoria-aberta" style="margin: 0 15px 10px; font-size: 18px; color: var(--red);"></h2>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; padding: 15px;" id="grid-itens"></div>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-perfil" class="modal">
+        <div class="container-box" style="margin-top: 20vh; text-align: center;">
+            <h2 style="color:var(--red);">MEU PERFIL</h2>
+            <p style="font-size: 13px; color: #888;">Altere sua senha de acesso</p>
+            <input type="password" id="perfil-nova-senha" placeholder="Digite a nova senha">
+            <button class="btn-red" id="btn-atualizar-senha" style="width: 100%;">SALVAR NOVA SENHA</button>
+            <button class="btn-voltar" onclick="document.getElementById('modal-perfil').style.display='none'" style="width:100%; margin-top:10px;">VOLTAR</button>
         </div>
     </div>
 
@@ -162,13 +190,13 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIGURAÇÕES ORIGINAIS RESTAURADAS
         const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
-        
         let bancoDados = []; const video = document.getElementById('main-video');
         let playlistAtual = []; let indexEpiAtual = 0; let linkAtual = ""; let hls = null;
         let tipoAtualAberto = null;
+        let idUsuarioLogado = null;
+        const idSessaoLocal = Math.random().toString(36).substring(2, 15);
 
         const tratarLink = (linha, index) => {
             if (linha.includes('|')) {
@@ -189,12 +217,11 @@
             return true;
         }
 
-        // LOGIN COM DADOS DE BLINDAGEM RESTAURADOS
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('u-l').value; const p = document.getElementById('p-l').value;
-            // DADOS DE ADM BLINDADOS
             if(u === "Rhuan" && p === "2026") { 
                 document.getElementById('display-validade').innerHTML = "MODO<br>ADMIN";
+                idUsuarioLogado = "admin";
                 logar(true); 
                 return; 
             }
@@ -203,10 +230,39 @@
             if(enc) {
                 if(enc.suspenso) { alert("Sua conta está suspensa!"); return; }
                 if(enc.expira !== 999 && enc.expira < Date.now()) { alert("Seu acesso expirou!"); return; }
-                let dataVal = (enc.expira === 999) ? "ACESSO<br>VITALÍCIO" : `VENCE DIA:<br>${new Date(enc.expira).toLocaleDateString('pt-br')}`;
+                
+                await update(ref(db, `usuarios/${enc.id}`), { sessaoAtiva: idSessaoLocal });
+                monitorarSessao(enc.id);
+
+                let dataVal = (enc.expira === 999) ? "ACESSO<br>VITALÍCIO" : `VENCIMENTO:<br>${new Date(enc.expira).toLocaleString('pt-br').split(':').slice(0, 2).join(':')}`;
                 document.getElementById('display-validade').innerHTML = dataVal;
+                idUsuarioLogado = enc.id;
                 logar(false);
             } else { alert("Usuário ou senha incorretos!"); }
+        };
+
+        function monitorarSessao(userId) {
+            onValue(ref(db, `usuarios/${userId}/sessaoAtiva`), (snap) => {
+                if (snap.val() && snap.val() !== idSessaoLocal) {
+                    document.getElementById('main-content').style.display = 'none';
+                    document.getElementById('tela-bloqueio').style.display = 'flex';
+                    video.pause();
+                }
+            });
+        }
+
+        window.abrirPerfil = () => {
+            if(idUsuarioLogado === "admin") { alert("Painel ADM."); return; }
+            document.getElementById('modal-perfil').style.display = 'block';
+        };
+
+        document.getElementById('btn-atualizar-senha').onclick = () => {
+            const nova = document.getElementById('perfil-nova-senha').value;
+            if(nova.length < 3) { alert("Mínimo 3 caracteres."); return; }
+            update(ref(db, `usuarios/${idUsuarioLogado}`), { pass: nova }).then(() => {
+                alert("Senha alterada!");
+                document.getElementById('modal-perfil').style.display = 'none';
+            });
         };
 
         function logar(adm) {
@@ -267,16 +323,12 @@
             renderHome(tipoAtualAberto);
         };
 
-        // FUNÇÃO DO PLAYER ATUALIZADA PARA RODAR OS DOIS MODOS (.mp4 e .m3u8)
         window.iniciarPlayer = (urlBruta, nome, listaEpis = [], index = 0) => {
             const dadosEpi = tratarLink(urlBruta, index);
             linkAtual = dadosEpi.url;
-            playlistAtual = listaEpis; 
-            indexEpiAtual = index;
-            
+            playlistAtual = listaEpis; indexEpiAtual = index;
             document.getElementById('player-area').style.display = 'block';
             const listDiv = document.getElementById('lista-epis-inline');
-            
             if(playlistAtual.length > 1) {
                 listDiv.style.display = 'block';
                 document.getElementById('btn-prev-epi').style.display = 'block';
@@ -287,24 +339,11 @@
                 document.getElementById('btn-prev-epi').style.display = 'none';
                 document.getElementById('btn-next-epi').style.display = 'none';
             }
-
             if(hls) { hls.destroy(); hls = null; }
-
-            // DETECTA O FORMATO E RODA NO MODO CERTO
-            if (linkAtual.toLowerCase().includes('.m3u8')) {
-                if (Hls.isSupported()) {
-                    hls = new Hls();
-                    hls.loadSource(linkAtual);
-                    hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo());
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = linkAtual;
-                    iniciarVideo();
-                }
-            } else {
-                video.src = linkAtual;
-                video.load();
-                iniciarVideo();
+            if(Hls.isSupported()){ 
+                hls = new Hls(); hls.loadSource(linkAtual); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => iniciarVideo()); 
+            } else { 
+                video.src = linkAtual; video.play(); iniciarVideo();
             }
             window.scrollTo(0,0);
         };
@@ -455,8 +494,10 @@
                 list.innerHTML += `<tr><td>${d.nome}</td><td style="color:var(--red)">${d.categoria}</td><td><button class="btn-mini" style="background:#007bff" onclick="window.editC('${d.id}')">ED</button><button class="btn-mini" style="background:#dc3545" onclick="window.delC('${d.id}')">X</button></td></tr>`;
             });
         }
-        window.editC = (id) => { const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-sinopse').value = d.sinopse || ""; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); };
-        document.getElementById('btn-limpar-db').onclick = () => { document.getElementById('edit-id-cont').value = ""; document.getElementById('c-nome').value = ""; document.getElementById('c-cat').value = ""; document.getElementById('c-sinopse').value = ""; document.getElementById('c-links').value = ""; document.getElementById('c-capa').value = ""; alert("Campos limpos!"); };
+        window.editC = (id) => { 
+            const d = bancoDados.find(b => b.id === id); document.getElementById('edit-id-cont').value = id; document.getElementById('c-nome').value = d.nome; document.getElementById('c-tipo').value = d.tipo; document.getElementById('c-cat').value = d.categoria; document.getElementById('c-sinopse').value = d.sinopse || ""; document.getElementById('c-links').value = d.url; document.getElementById('c-capa').value = d.capa; window.scrollTo(0,0); 
+        };
+        document.getElementById('btn-limpar-db').onclick = () => { document.getElementById('edit-id-cont').value = ""; document.getElementById('c-nome').value = ""; document.getElementById('c-cat').value = ""; document.getElementById('c-sinopse').value = ""; document.getElementById('c-links').value = ""; document.getElementById('c-capa').value = ""; alert("Limpo!"); };
         document.getElementById('btn-salvar-db').onclick = () => { const id = document.getElementById('edit-id-cont').value; const obj = { nome: document.getElementById('c-nome').value, tipo: document.getElementById('c-tipo').value, categoria: document.getElementById('c-cat').value.toUpperCase(), sinopse: document.getElementById('c-sinopse').value, url: document.getElementById('c-links').value, capa: document.getElementById('c-capa').value }; id ? update(ref(db, `conteudo/${id}`), obj) : push(ref(db, 'conteudo'), obj); alert("Sucesso!"); };
         window.delC = (id) => confirm("Excluir?") && remove(ref(db, `conteudo/${id}`));
         document.getElementById('filtro-adm-conteudo').onkeyup = (e) => renderADMConteudo(e.target.value);

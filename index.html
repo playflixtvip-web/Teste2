@@ -202,7 +202,6 @@
         let nomeUsuarioLogado = "";
         const idSessaoLocal = Math.random().toString(36).substring(2, 15);
 
-        // ... Funções auxiliares mantidas ...
         const tratarLink = (linha, index) => {
             if (linha.includes('|')) {
                 const partes = linha.split('|');
@@ -222,7 +221,6 @@
             return true;
         }
 
-        // --- LÓGICA DE LOGIN ---
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('u-l').value; const p = document.getElementById('p-l').value;
             if(u === "Rhuan" && p === "2026") { 
@@ -308,7 +306,6 @@
             renderHome(tipo);
         };
 
-        // --- ATUALIZAÇÃO: VOLTAR AO PORTAL MARCA OFFLINE ---
         window.voltarAoPortal = () => {
             if (idUsuarioLogado && idUsuarioLogado !== "admin") {
                 update(ref(db, `usuarios/${idUsuarioLogado}/sessoes/${idSessaoLocal}`), { online: false, titulo: null });
@@ -444,13 +441,26 @@
             local.appendChild(card);
         }
 
+        // --- ATUALIZAÇÃO DA FUNÇÃO ABRIR INFO PARA CARREGAR CAPA ---
         window.abrirInfo = (item, dados, isSerie) => {
             const modal = document.getElementById('modal-info');
-            document.getElementById('info-bg').style.backgroundImage = `url(${item.capa})`;
+            const infoBg = document.getElementById('info-bg');
+            
+            // Correção aqui: Adicionado aspas para garantir o carregamento da URL no background
+            if (item.capa) {
+                infoBg.style.backgroundImage = `url("${item.capa}")`;
+            } else {
+                infoBg.style.background = "#141414";
+            }
+
             document.getElementById('info-titulo').innerText = isSerie ? item.nome.split(" -")[0].trim() : item.nome;
             document.getElementById('info-sinopse').innerText = item.sinopse || "Nenhuma sinopse disponível.";
+            
             const btnPlay = document.getElementById('btn-info-play');
-            btnPlay.onclick = () => { modal.style.display = 'none'; isSerie ? abrirTemporadas(item.nome.split(" -")[0].trim(), dados) : iniciarPlayer(dados, item.nome); };
+            btnPlay.onclick = () => { 
+                modal.style.display = 'none'; 
+                isSerie ? abrirTemporadas(item.nome.split(" -")[0].trim(), dados) : iniciarPlayer(dados, item.nome); 
+            };
             modal.style.display = 'block';
         };
 

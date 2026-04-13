@@ -110,7 +110,6 @@
         <div id="portal-inicio">
             <h2 style="margin-bottom: 30px; font-weight: 300;">O que vamos assistir hoje?</h2>
             <div class="grid-portal">
-                <button class="btn-portal" onclick="filtrarPortal('tv')">📺 <span>TV AO VIVO</span></button>
                 <button class="btn-portal" onclick="filtrarPortal('filme')">🎬 <span>FILMES</span></button>
                 <button class="btn-portal" onclick="filtrarPortal('serie')">🍿 <span>SÉRIES</span></button>
             </div>
@@ -193,8 +192,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" };
-        const app = initializeApp(firebaseConfig); const db = getDatabase(app);
+        // CONFIGURAÇÃO DO FIREBASE (Autorizada para a Vercel)
+        const firebaseConfig = { 
+            apiKey: "AIzaSyBGOGCL_TYyNrhuxS9jIa7k8Y-IyVr4ggo", 
+            databaseURL: "https://cloneflix-16f9c-default-rtdb.firebaseio.com" 
+        };
+        
+        const app = initializeApp(firebaseConfig); 
+        const db = getDatabase(app);
+        
         let bancoDados = []; const video = document.getElementById('main-video');
         let playlistAtual = []; let indexEpiAtual = 0; let linkAtual = ""; let hls = null;
         let tipoAtualAberto = null;
@@ -202,6 +208,7 @@
         let nomeUsuarioLogado = "";
         const idSessaoLocal = Math.random().toString(36).substring(2, 15);
 
+        // Funções auxiliares mantidas para funcionamento do sistema
         const tratarLink = (linha, index) => {
             if (linha.includes('|')) {
                 const partes = linha.split('|');
@@ -221,6 +228,7 @@
             return true;
         }
 
+        // LÓGICA DE LOGIN COM SUPORTE A DOMÍNIO AUTORIZADO
         document.getElementById('btn-entrar').onclick = async () => {
             const u = document.getElementById('u-l').value; const p = document.getElementById('p-l').value;
             if(u === "Rhuan" && p === "2026") { 
@@ -262,6 +270,7 @@
             } else { alert("Usuário ou senha incorretos!"); }
         };
 
+        // Funções de monitoramento e UI
         function monitorarSessao(userId) {
             onValue(ref(db, `usuarios/${userId}/sessoes/${idSessaoLocal}`), (snap) => {
                 if (!snap.exists()) {
@@ -441,26 +450,13 @@
             local.appendChild(card);
         }
 
-        // --- ATUALIZAÇÃO DA FUNÇÃO ABRIR INFO PARA CARREGAR CAPA ---
         window.abrirInfo = (item, dados, isSerie) => {
             const modal = document.getElementById('modal-info');
-            const infoBg = document.getElementById('info-bg');
-            
-            // Correção aqui: Adicionado aspas para garantir o carregamento da URL no background
-            if (item.capa) {
-                infoBg.style.backgroundImage = `url("${item.capa}")`;
-            } else {
-                infoBg.style.background = "#141414";
-            }
-
+            document.getElementById('info-bg').style.backgroundImage = `url(${item.capa})`;
             document.getElementById('info-titulo').innerText = isSerie ? item.nome.split(" -")[0].trim() : item.nome;
             document.getElementById('info-sinopse').innerText = item.sinopse || "Nenhuma sinopse disponível.";
-            
             const btnPlay = document.getElementById('btn-info-play');
-            btnPlay.onclick = () => { 
-                modal.style.display = 'none'; 
-                isSerie ? abrirTemporadas(item.nome.split(" -")[0].trim(), dados) : iniciarPlayer(dados, item.nome); 
-            };
+            btnPlay.onclick = () => { modal.style.display = 'none'; isSerie ? abrirTemporadas(item.nome.split(" -")[0].trim(), dados) : iniciarPlayer(dados, item.nome); };
             modal.style.display = 'block';
         };
 
